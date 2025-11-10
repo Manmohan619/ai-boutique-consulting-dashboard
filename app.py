@@ -35,14 +35,14 @@ st.markdown("""
 .stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
 .block-container > div:empty{display:none}
 
-/* Chart wrapper with rounded border */
+/* Chart wrapper (white, rounded) */
 .plot-card{
-  border:1.25px solid #e5e7eb;
+  border:1px solid #e5e7eb;
   border-radius:12px;
   background:#ffffff;
-  padding:8px 10px 2px 10px;
+  padding:8px 10px 6px 10px;
   margin:0;
-  overflow:visible; /* allow in-plot annotations to show */
+  overflow:visible;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -139,7 +139,7 @@ st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
 with st.container():  # keeps widget layout stable; avoids orphan artifacts
-    # create a stable uid for keys (prevents the "white ribbon" slider ghost)
+    # stable uid for keys (prevents the "white ribbon" ghost slider)
     if "uid" not in st.session_state.df.columns:
         st.session_state.df["uid"] = [
             f'{i}_{str(r["Firm"]).strip().lower().replace(" ", "_") or "blank"}'
@@ -173,7 +173,6 @@ st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">4) Competitor Map (Professional Plot + In-Plot Axis Titles)</div>', unsafe_allow_html=True)
 show_labels = st.checkbox("Show firm labels on chart", value=True)
 
-# --- Plot ---
 fig = px.scatter(
     edited,
     x="Offering_Nature", y="Value_Proposition",
@@ -184,61 +183,59 @@ fig = px.scatter(
     template="plotly_white",
 )
 
-# White plot area, transparent paper around it
+# --- White plot area, transparent paper ---
 fig.layout.plot_bgcolor = "#ffffff"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# Tidy axes (no default titles; we'll add inside as annotations)
+# --- Axes: keep numbers visible and dark ---
 fig.update_xaxes(
     title_text=None,
     range=[0.5, 10.5],
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.1,
-    ticks="outside", ticklen=6, tickcolor="#000",
+    zeroline=False, showline=True, linecolor="#111", linewidth=1.1,
+    ticks="outside", ticklen=6, tickcolor="#111",
     tickmode="linear", tick0=1, dtick=1,
-    tickfont=dict(color="#000", size=12, family="Inter, Arial, sans-serif"),
+    showticklabels=True, tickfont=dict(color="#111", size=12, family="Inter, Arial, sans-serif"),
 )
 fig.update_yaxes(
     title_text=None,
     range=[0.5, 10.5],
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.1,
-    ticks="outside", ticklen=6, tickcolor="#000",
+    zeroline=False, showline=True, linecolor="#111", linewidth=1.1,
+    ticks="outside", ticklen=6, tickcolor="#111",
     tickmode="linear", tick0=1, dtick=1,
-    tickfont=dict(color="#000", size=12, family="Inter, Arial, sans-serif"),
+    showticklabels=True, tickfont=dict(color="#111", size=12, family="Inter, Arial, sans-serif"),
 )
 
-# Bubble label styling + outlines
+# --- Bubble styling ---
 if show_labels:
     fig.update_traces(textposition="top center", textfont=dict(color="#111", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#111")), cliponaxis=False)
 
-# In-plot axis titles (dark) + professional margins
+# --- In-plot axis titles (precise anchors; won’t cover ticks) ---
 fig.update_layout(
-    height=560,  # good vertical space for labels
-    margin=dict(l=70, r=140, t=50, b=65),  # enough room for ticks and colorbar
+    height=560,
+    margin=dict(l=80, r=140, t=50, b=80),
     font=dict(family="Inter, Arial, sans-serif"),
     coloraxis_colorbar=dict(
         title=dict(text="SME_Focus", font=dict(color="#111", size=12)),
         tickfont=dict(color="#111", size=11),
         x=1.01, xanchor="left", y=0.5, yanchor="middle",
-        len=0.9, thickness=12,
-        bgcolor="rgba(255,255,255,0.75)",
+        len=0.90, thickness=12,
+        bgcolor="rgba(255,255,255,0.9)",
         outlinecolor="#d1d5db", outlinewidth=1
     ),
     annotations=[
-        # X-axis title inside (bottom center of plotting area)
         dict(
             text="Nature of Offering (Functional → Holistic)",
-            x=0.5, y=0.015, xref="paper", yref="paper",
+            x=0.5, y=0.06, xref="paper", yref="paper",
             showarrow=False,
             font=dict(size=14, color="#111", family="Arial Black"),
             xanchor="center", yanchor="bottom"
         ),
-        # Y-axis title inside (left middle of plotting area)
         dict(
             text="Value Proposition (Cost → Innovation)",
-            x=0.015, y=0.5, xref="paper", yref="paper",
+            x=0.06, y=0.5, xref="paper", yref="paper",
             showarrow=False,
             font=dict(size=14, color="#111", family="Arial Black"),
             xanchor="left", yanchor="middle",
@@ -247,10 +244,12 @@ fig.update_layout(
     ],
 )
 
-# Full-width responsive container
+# --- Render full-width; disable Streamlit theming so our colors win ---
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
-    fig, use_container_width=True,
+    fig,
+    use_container_width=True,
+    theme=None,  # ← important: prevents Streamlit dark theme from turning tick labels white
     config={"displaylogo": False,
             "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":560,"width":1200}}
 )
