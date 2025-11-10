@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # ==================== PAGE CONFIG ====================
-st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)", layout="wide")
+st.set_page_config(page_title="AI Dashboard | Consulting – Boutique Firms (India, Serving SMEs)", layout="wide")
 
 # ==================== GLOBAL STYLES ====================
 st.markdown("""
