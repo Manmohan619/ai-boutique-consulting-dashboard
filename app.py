@@ -3,13 +3,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ============== PAGE CONFIG ==============
+# ===== PAGE CONFIG =====
 st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)", layout="wide")
 
-# ============== GLOBAL STYLE (card layout, theme-aware) ==============
+# ===== THEME-AWARE STYLES (no random white bars) =====
 st.markdown("""
 <style>
-/* Header banner */
 .top-banner{
   background: linear-gradient(90deg,#0f766e 0%,#2563eb 100%);
   color:#fff;padding:18px 22px;border-radius:14px;margin-bottom:16px;
@@ -17,39 +16,29 @@ st.markdown("""
 }
 .top-banner .title{font-size:24px;font-weight:800;letter-spacing:.3px}
 .top-banner .meta{font-size:14px;opacity:.98;margin-top:6px}
-
-/* Card blocks – auto adapt to theme */
 .card{border-radius:14px;padding:16px 18px;margin:12px 0;border:1px solid}
 @media (prefers-color-scheme: dark){
   .card{background:#0f172a;border-color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-  .h3{color:#e5e7eb}
-  .subtle{color:#94a3b8}
+  .h3{color:#e5e7eb}.subtle{color:#94a3b8}
 }
 @media (prefers-color-scheme: light){
   .card{background:#ffffff;border-color:#e8ecf4;box-shadow:0 6px 18px rgba(17,24,39,.06)}
-  .h3{color:#0f172a}
-  .subtle{color:#475569}
+  .h3{color:#0f172a}.subtle{color:#475569}
 }
-
-/* Section headings */
 .h3{font-weight:800;font-size:18px;margin-bottom:10px}
 .subtle{font-size:13px}
-
-/* Buttons */
 .stDownloadButton button,.stButton>button{
   background:#0f766e !important;color:#fff !important;border-radius:10px !important;font-weight:700 !important
 }
 .stDownloadButton button:hover,.stButton>button:hover{background:#115e59 !important}
-
-/* Dataframe soft border */
-.stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
-
-/* Remove any stray spacing blocks (prevents “white pills”) */
+/* Hide any truly empty top-level blocks (prevents pill-like blank ribbons) */
 .block-container > div:empty{display:none}
+/* Also hide the HR look from any accidental '---' markdown (we removed them anyway) */
+hr{display:none}
 </style>
 """, unsafe_allow_html=True)
 
-# ============== HEADER ==============
+# ===== HEADER =====
 st.markdown("""
 <div class="top-banner">
   <div class="title">AI-Integrated Competitor Map • Boutique Consulting (India, SMEs)</div>
@@ -59,7 +48,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ============== Helper: dynamic explanation text ==============
+# ===== Helper: dynamic explanation =====
 def explain_row(on, vp, sme):
     def bucket(x):
         if x >= 8: return "high"
@@ -72,7 +61,7 @@ def explain_row(on, vp, sme):
     c = "with strong SME engagement." if sme_b=="high" else "with selective SME reach." if sme_b=="moderate" else "with limited SME focus."
     return f"{a}, {b} {c}"
 
-# ============== 1) LOAD DATA (CARD) ==============
+# ===== 1) LOAD DATA (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">1) Load Data</div>', unsafe_allow_html=True)
 
@@ -95,12 +84,11 @@ with c_tip:
     st.markdown('<div class="subtle">Tip: Add firms below and adjust scores with sliders. Changes apply instantly.</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ============== 2) MANAGE FIRMS (CARD) ==============
+# ===== 2) MANAGE FIRMS (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
-# Add firm – always visible (no dropdowns)
-st.markdown("**Add a new firm**")
+# Add inline
 c1, c2, c3, c4, c5 = st.columns([0.32, 0.18, 0.18, 0.18, 0.14])
 new_name = c1.text_input("Firm name", placeholder="Enter firm name")
 new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
@@ -118,7 +106,7 @@ if c5.button("Add firm"):
     else:
         st.error("Please enter a firm name.")
 
-st.markdown("---")
+# Delete
 st.markdown("**Delete firms**")
 d1, d2 = st.columns([0.72, 0.28])
 with d1:
@@ -129,7 +117,7 @@ with d2:
         st.success("Selected firms deleted.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ============== 3) EDIT SCORES (CARD) ==============
+# ===== 3) EDIT SCORES (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
@@ -152,7 +140,7 @@ edited["AI_Explanation"] = [
     for _, r in edited.iterrows()
 ]
 
-# ============== 4) COMPETITOR MAP (CARD) ==============
+# ===== 4) COMPETITOR MAP (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">4) Competitor Map (White Plot + Smart Labels)</div>', unsafe_allow_html=True)
 
@@ -170,7 +158,6 @@ def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
         positions.append(pos)
     return positions
 
-# Build figure (avoid version-sensitive layout args)
 fig = px.scatter(
     edited,
     x="Offering_Nature", y="Value_Proposition",
@@ -185,18 +172,19 @@ fig = px.scatter(
         "SME_Focus":"SME Focus"
     }
 )
+# White plot area + black axes & ticks (done in a version-safe way)
+fig.update_layout(margin=dict(l=10,r=10,t=30,b=10))
+fig.update_xaxes(range=[0.5,10.5], showgrid=True, gridcolor="#d0d4da",
+                 zeroline=False, linecolor="#000", linewidth=1.2, title_font=dict(color="#000"), tickfont=dict(color="#000"))
+fig.update_yaxes(range=[0.5,10.5], showgrid=True, gridcolor="#d0d4da",
+                 zeroline=False, linecolor="#000", linewidth=1.2, title_font=dict(color="#000"), tickfont=dict(color="#000"))
+# Force white background explicitly (these are widely supported)
+fig.layout.plot_bgcolor = "#ffffff"
+fig.layout.paper_bgcolor = "#ffffff"
 
 if show_labels:
-    fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
-fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
-
-# Minimal, robust layout (keeps axes/ticks black, white plot area)
-fig.update_layout(
-    height=640,
-    margin=dict(l=10, r=10, t=30, b=10),
-)
-fig.update_xaxes(range=[0.5,10.5], showgrid=True, gridcolor="#cfd3d9", zeroline=False, linecolor="#000", linewidth=1.2)
-fig.update_yaxes(range=[0.5,10.5], showgrid=True, gridcolor="#cfd3d9", zeroline=False, linecolor="#000", linewidth=1.2)
+    fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000000", size=12))
+fig.update_traces(marker=dict(line=dict(width=2, color="#000000")), cliponaxis=False)
 
 st.plotly_chart(
     fig, use_container_width=True,
@@ -207,10 +195,9 @@ st.plotly_chart(
 x_mean = float(edited["Offering_Nature"].mean())
 y_mean = float(edited["Value_Proposition"].mean())
 st.caption(f"Mean reference: Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ============== 5) WHITE-SPACE + STRATEGY (CARD) ==============
+# ===== 5) WHITE-SPACE + STRATEGY (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
 
@@ -238,7 +225,7 @@ st.markdown("**Strategy Recommendations**")
 st.success("\n".join([f"• {d}" for d in diffs]))
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ============== 6) EXPORT (CARD) ==============
+# ===== 6) EXPORT (CARD) =====
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
 csv_data = edited.to_csv(index=False).encode("utf-8")
