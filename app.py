@@ -43,17 +43,17 @@ st.markdown("""
 /* Hide truly empty blocks (prevents blank ribbons) */
 .block-container > div:empty{display:none}
 
-/* ---- Chart wrapper for rounded border + background ---- */
-.plot-wrapper .js-plotly-plot{
-  border:1.5px solid #000000;      /* black border */
-  border-radius:12px;
-  padding:6px;
-  background:#eefaFF;              /* very light blue outside axes */
+/* ---- Chart wrapper for rounded border ---- */
+.plot-card{
+  border:1.75px solid #000; border-radius:12px; overflow:hidden;
+  /* keep wrapper background neutral; inner plot carries light-blue */
+  background: #0b1220; /* visible only on host dark themes behind margins */
+  padding:0; margin:0;
 }
 
-/* Darken colorbar title/ticks (fallback if Plotly option not supported) */
-.plot-wrapper .colorbar text,
-.plot-wrapper .colorbar-title{ fill:#000000 !important; }
+/* Fallback darkening for colorbar text if Plotly version ignores font settings */
+.plot-card .colorbar text,
+.plot-card .colorbar-title{ fill:#000000 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -221,19 +221,26 @@ if show_labels:
     fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
 
-# Try to set colorbar text dark; CSS fallback above ensures this anyway
+# Put the colorbar INSIDE the plot (right edge), with dark title/ticks
 try:
-    fig.update_layout(coloraxis_colorbar=dict(
-        title=dict(text="SME Focus", font=dict(color="#000")),
-        tickfont=dict(color="#000")
-    ))
+    fig.update_layout(
+        coloraxis_colorbar=dict(
+            title=dict(text="SME Focus", font=dict(color="#000")),
+            tickfont=dict(color="#000"),
+            x=0.985, xanchor="right", y=0.5, yanchor="middle",  # inside the plotting area
+            len=0.9, thickness=12,
+            bgcolor="rgba(255,255,255,0.55)",  # subtle readable backdrop
+            outlinecolor="#000", outlinewidth=1
+        )
+    )
 except Exception:
     pass
 
-fig.update_layout(margin=dict(l=10, r=10, t=30, b=10))
+# Tight margins; wrapper provides rounded border
+fig.update_layout(margin=dict(l=20, r=20, t=30, b=20))
 
-# Wrap in a div so our rounded border/blue bg CSS applies
-st.markdown('<div class="plot-wrapper">', unsafe_allow_html=True)
+# Wrap in a div so our rounded border applies and is visible
+st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig, use_container_width=True,
     config={"displaylogo": False,
