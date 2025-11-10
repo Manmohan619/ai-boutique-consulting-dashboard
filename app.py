@@ -3,28 +3,37 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)", layout="wide")
+# ===================== PAGE CONFIG =====================
+st.set_page_config(
+    page_title="AI Dashboard | Boutique Consulting (India, SMEs)",
+    layout="wide"
+)
 
-# ---------------- GLOBAL STYLE (cards + theme) ----------------
+# ===================== GLOBAL STYLE =====================
 st.markdown("""
 <style>
-/* App background */
-body { background: #f5f7fb; }
+/* App background (works in light/dark) */
+html, body, .stApp { background: #0b122000; }  /* transparent, use Streamlit theme */
 
 /* Header banner */
 .top-banner {
   background: linear-gradient(90deg, #0f766e 0%, #2563eb 100%); /* teal -> indigo */
-  color: #fff; padding: 18px 22px; border-radius: 14px; margin-bottom: 18px;
+  color: #fff;
+  padding: 18px 22px;
+  border-radius: 14px;
+  margin-bottom: 18px;
   box-shadow: 0 8px 22px rgba(0,0,0,.10);
 }
 .top-banner .title { font-size: 24px; font-weight: 800; letter-spacing:.3px; }
-.top-banner .meta { font-size: 14px; opacity:.98; margin-top: 6px; }
+.top-banner .meta  { font-size: 14px; opacity:.98; margin-top: 6px; }
 
-/* Section container as "cards" */
+/* Card blocks */
 .card {
-  background: #ffffff; border: 1px solid #e8ecf4; border-radius: 14px;
-  padding: 16px 18px; margin: 12px 0;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid #e8ecf4;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 12px 0;
   box-shadow: 0 6px 18px rgba(17,24,39,.06);
 }
 
@@ -32,21 +41,28 @@ body { background: #f5f7fb; }
 .h3 { color:#0f172a; font-weight:800; font-size: 18px; margin-bottom: 10px; }
 .subtle { color:#475569; font-size: 13px; }
 
-/* Buttons (download / add / reset) */
+/* Buttons */
 .stDownloadButton button, .stButton>button {
-  background:#0f766e !important; color:#fff !important; border-radius:10px !important; font-weight:700 !important;
+  background:#0f766e !important; color:#fff !important;
+  border-radius:10px !important; font-weight:700 !important;
 }
 .stDownloadButton button:hover, .stButton>button:hover { background:#115e59 !important; }
 
-/* Dataframe wrapper (soft border) */
+/* Table border radius */
 .stDataFrame { border: 1px solid #e5e7eb; border-radius: 10px; }
 
-/* Slider label spacing */
-.stSlider>div>div>div>div { background: #e2e8f0; }  /* thin slider track ticks */
+/* Firm row mini-card */
+.firm-row {
+  border:1px solid #edf0f6; border-radius:12px;
+  padding:10px 12px; margin:8px 0; background:#fbfdff;
+}
+
+/* IMPORTANT: Do NOT paint generic divs (this caused the white pills). */
+/* Removed the old broad slider track rule that created blank white bars. */
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
+# ===================== HEADER =====================
 st.markdown("""
 <div class="top-banner">
   <div class="title">AI-Integrated Competitor Map • Boutique Consulting (India, SMEs)</div>
@@ -56,7 +72,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- UTIL: dynamic explanation text ----------------
+# ===================== UTIL: dynamic explanation =====================
 def explain_row(on, vp, sme):
     def bucket(x):
         if x >= 8: return "high"
@@ -69,91 +85,81 @@ def explain_row(on, vp, sme):
     c = "with strong SME engagement." if sme_b=="high" else "with selective SME reach." if sme_b=="moderate" else "with limited SME focus."
     return f"{a}, {b} {c}"
 
-# ---------------- LOAD DATA (card) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">1) Load Data</div>', unsafe_allow_html=True)
+# ===================== 1) LOAD DATA (CARD) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">1) Load Data</div>', unsafe_allow_html=True)
 
-    default = pd.read_csv("firms.csv")
-    uploaded = st.file_uploader("Upload firms.csv (optional)", type=["csv"])
-    base_df = pd.read_csv(uploaded) if uploaded else default.copy()
-    for c in ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]:
-        if c not in base_df.columns:
-            base_df[c] = 5 if c!="Firm" else ""
+default = pd.read_csv("firms.csv")
+uploaded = st.file_uploader("Upload firms.csv (optional)", type=["csv"])
+base_df = pd.read_csv(uploaded) if uploaded else default.copy()
+for c in ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]:
+    if c not in base_df.columns:
+        base_df[c] = 5 if c!="Firm" else ""
 
-    if "df" not in st.session_state:
+if "df" not in st.session_state:
+    st.session_state.df = base_df.copy()
+
+cols = st.columns([0.2, 0.8])
+with cols[0]:
+    if st.button("Reset to Loaded Data"):
         st.session_state.df = base_df.copy()
+        st.success("Data reset.")
+with cols[1]:
+    st.markdown('<div class="subtle">Tip: Add firms below and adjust scores with sliders. Changes apply instantly.</div>', unsafe_allow_html=True)
 
-    cols = st.columns([0.18, 0.82])
-    with cols[0]:
-        if st.button("Reset to Loaded Data"):
-            st.session_state.df = base_df.copy()
-            st.success("Data reset.")
-    with cols[1]:
-        st.markdown('<div class="subtle">Tip: You can add firms below and adjust scores with sliders.</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+# ===================== 2) MANAGE FIRMS (CARD) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
-# ---------------- MANAGE FIRMS (cards) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
+# Add firm inline (visible)
+st.markdown("**Add a new firm**")
+c1, c2, c3, c4 = st.columns([0.34, 0.22, 0.22, 0.22])
+new_name = c1.text_input("Firm name", placeholder="Enter firm name")
+new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
+new_vp   = c3.slider("Value_Proposition", 1, 10, 6, key="add_vp")
+new_sme  = c4.slider("SME_Focus", 1, 10, 6, key="add_sme")
+if st.button("Add firm"):
+    if new_name.strip():
+        st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([{
+            "Firm": new_name.strip(),
+            "Offering_Nature": new_on,
+            "Value_Proposition": new_vp,
+            "SME_Focus": new_sme
+        }])], ignore_index=True)
+        st.success(f"Added: {new_name.strip()}")
+    else:
+        st.error("Please enter a firm name.")
 
-    # Add firm inline (visible, not hidden)
-    st.markdown("**Add a new firm**")
-    c1, c2, c3, c4 = st.columns([0.34, 0.22, 0.22, 0.22])
-    new_name = c1.text_input("Firm name", placeholder="Enter firm name")
-    new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
-    new_vp   = c3.slider("Value_Proposition", 1, 10, 6, key="add_vp")
-    new_sme  = c4.slider("SME_Focus", 1, 10, 6, key="add_sme")
-    add_cols = st.columns([0.15, 0.85])
-    if add_cols[0].button("Add firm"):
-        if new_name.strip():
-            st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([{
-                "Firm": new_name.strip(),
-                "Offering_Nature": new_on,
-                "Value_Proposition": new_vp,
-                "SME_Focus": new_sme
-            }])], ignore_index=True)
-            st.success(f"Added: {new_name.strip()}")
-        else:
-            st.error("Please enter a firm name.")
+# Delete firms
+st.markdown("---")
+st.markdown("**Delete firms**")
+d1, d2 = st.columns([0.6, 0.4])
+with d1:
+    to_delete = st.multiselect("Select firm(s) to delete", options=st.session_state.df["Firm"].tolist())
+with d2:
+    if st.button("Delete selected"):
+        st.session_state.df = st.session_state.df[~st.session_state.df["Firm"].isin(to_delete)].reset_index(drop=True)
+        st.success("Selected firms deleted.")
 
-    # Delete firms
-    st.markdown("---")
-    st.markdown("**Delete firms**")
-    del_cols = st.columns([0.6, 0.4])
-    with del_cols[0]:
-        to_delete = st.multiselect("Select firm(s) to delete", options=st.session_state.df["Firm"].tolist())
-    with del_cols[1]:
-        if st.button("Delete selected"):
-            st.session_state.df = st.session_state.df[~st.session_state.df["Firm"].isin(to_delete)].reset_index(drop=True)
-            st.success("Selected firms deleted.")
+st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+# ===================== 3) EDIT SCORES (CARD, ALWAYS VISIBLE) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust scores below. Changes apply instantly.</div>', unsafe_allow_html=True)
 
-# ---------------- EDIT SCORES (always visible sliders in cards) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">3) Edit Scores (Sliders)</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtle">Adjust scores below. Changes apply instantly.</div>', unsafe_allow_html=True)
+for i in range(len(st.session_state.df)):
+    row = st.session_state.df.loc[i]
+    st.markdown(f'<div class="firm-row"><div style="font-weight:700;color:#0f172a;margin-bottom:8px;">{row["Firm"] if row["Firm"] else f"Firm {i+1}"}</div></div>', unsafe_allow_html=True)
+    cols = st.columns([0.34, 0.22, 0.22, 0.22])
+    name = cols[0].text_input("Firm", value=str(row["Firm"]), key=f"name_{i}")
+    on   = cols[1].slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{i}")
+    vp   = cols[2].slider("Value_Proposition", 1, 10, int(row["Value_Proposition"]), key=f"vp_{i}")
+    sme  = cols[3].slider("SME_Focus", 1, 10, int(row["SME_Focus"]), key=f"sme_{i}")
+    st.session_state.df.loc[i, ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]] = [name, on, vp, sme]
 
-    # Render each firm as a small card row with sliders (no dropdowns/expanders)
-    for i in range(len(st.session_state.df)):
-        row = st.session_state.df.loc[i]
-        st.markdown(
-            f"""<div style="border:1px solid #edf0f6;border-radius:12px;padding:10px 12px;margin:8px 0;background:#fbfdff;">
-            <div style="font-weight:700;color:#0f172a;margin-bottom:8px;">{row['Firm'] if row['Firm'] else f'Firm {i+1}'}</div>
-            </div>""", unsafe_allow_html=True)
-
-        cols = st.columns([0.34, 0.22, 0.22, 0.22])
-        name = cols[0].text_input("Firm", value=str(row["Firm"]), key=f"name_{i}")
-        on   = cols[1].slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{i}")
-        vp   = cols[2].slider("Value_Proposition", 1, 10, int(row["Value_Proposition"]), key=f"vp_{i}")
-        sme  = cols[3].slider("SME_Focus", 1, 10, int(row["SME_Focus"]), key=f"sme_{i}")
-        st.session_state.df.loc[i, ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]] = [name, on, vp, sme]
-
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Snapshot edited data + explanation
 edited = st.session_state.df.copy()
@@ -162,110 +168,107 @@ edited["AI_Explanation"] = [
     for _, r in edited.iterrows()
 ]
 
-# ---------------- COMPETITOR MAP (card) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">4) Competitor Map (White Background + Smart Labels)</div>', unsafe_allow_html=True)
+# ===================== 4) COMPETITOR MAP (CARD) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">4) Competitor Map (White Background + Smart Labels)</div>', unsafe_allow_html=True)
 
-    show_labels = st.checkbox("Show firm labels on chart", value=True)
+show_labels = st.checkbox("Show firm labels on chart", value=True)
 
-    def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
-        positions = []
-        order = ["top center", "top left", "top right", "bottom left",
-                 "bottom right", "middle left", "middle right", "bottom center"]
-        for i, r in df.iterrows():
-            pos = "top center"
-            for j in range(0, i):
-                dx = abs(r[xcol] - df.iloc[j][xcol])
-                dy = abs(r[ycol] - df.iloc[j][ycol])
-                if dx < 0.45 and dy < 0.45:
-                    k = int((dx + dy) * 10) % len(order)
-                    pos = order[k]
-                    break
-            positions.append(pos)
-        return positions
+def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
+    positions = []
+    order = ["top center", "top left", "top right", "bottom left",
+             "bottom right", "middle left", "middle right", "bottom center"]
+    for i, r in df.iterrows():
+        pos = "top center"
+        for j in range(0, i):
+            dx = abs(r[xcol] - df.iloc[j][xcol])
+            dy = abs(r[ycol] - df.iloc[j][ycol])
+            if dx < 0.45 and dy < 0.45:
+                k = int((dx + dy) * 10) % len(order)
+                pos = order[k]
+                break
+        positions.append(pos)
+    return positions
 
-    fig = px.scatter(
-        edited,
-        x="Offering_Nature", y="Value_Proposition",
-        size="SME_Focus", color="SME_Focus",
-        text="Firm" if show_labels else None,
-        color_continuous_scale=px.colors.sequential.Viridis,   # complements teal/indigo header
-        hover_data=["AI_Explanation"], template="plotly_white",
-        labels={
-            "Offering_Nature": "Nature of Offering (Functional → Holistic)",
-            "Value_Proposition": "Value Proposition (Cost → Innovation)",
-            "SME_Focus": "SME Focus"
-        }
-    )
-    if show_labels:
-        fig.update_traces(textposition=choose_positions(edited),
-                          textfont=dict(color="#000000", size=12))
-    fig.update_traces(marker=dict(line=dict(width=2, color="#000000")), cliponaxis=False)
-    fig.update_layout(
-        height=640, paper_bgcolor="white", plot_bgcolor="white",
-        font=dict(color="#000000", size=14),
-        xaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
-                   tickfont=dict(color="#000000", size=13),
-                   titlefont=dict(color="#000000", size=16),
-                   zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
-        yaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
-                   tickfont=dict(color="#000000", size=13),
-                   titlefont=dict(color="#000000", size=16),
-                   zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
-        margin=dict(l=10, r=10, t=30, b=10), showlegend=False
-    )
-    st.plotly_chart(
-        fig, use_container_width=True,
-        config={
-            "displaylogo": False,
-            "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":640,"width":1100}
-        }
-    )
+fig = px.scatter(
+    edited,
+    x="Offering_Nature", y="Value_Proposition",
+    size="SME_Focus", color="SME_Focus",
+    text="Firm" if show_labels else None,
+    color_continuous_scale=px.colors.sequential.Viridis,   # complements header
+    hover_data=["AI_Explanation"], template="plotly_white",
+    labels={
+        "Offering_Nature": "Nature of Offering (Functional → Holistic)",
+        "Value_Proposition": "Value Proposition (Cost → Innovation)",
+        "SME_Focus": "SME Focus"
+    }
+)
+if show_labels:
+    fig.update_traces(textposition=choose_positions(edited),
+                      textfont=dict(color="#000000", size=12))
+fig.update_traces(marker=dict(line=dict(width=2, color="#000000")), cliponaxis=False)
+fig.update_layout(
+    height=640, paper_bgcolor="white", plot_bgcolor="white",
+    font=dict(color="#000000", size=14),
+    xaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
+               tickfont=dict(color="#000000", size=13),
+               titlefont=dict(color="#000000", size=16),
+               zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
+    yaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
+               tickfont=dict(color="#000000", size=13),
+               titlefont=dict(color="#000000", size=16),
+               zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
+    margin=dict(l=10, r=10, t=30, b=10), showlegend=False
+)
+st.plotly_chart(
+    fig, use_container_width=True,
+    config={
+        "displaylogo": False,
+        "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":640,"width":1100}
+    }
+)
 
-    x_mean = float(edited["Offering_Nature"].mean())
-    y_mean = float(edited["Value_Proposition"].mean())
-    st.caption(f"Mean reference (for clustering): Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
+x_mean = float(edited["Offering_Nature"].mean())
+y_mean = float(edited["Value_Proposition"].mean())
+st.caption(f"Mean reference (for clustering): Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------------- WHITE-SPACE + STRATEGY (card) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
+# ===================== 5) WHITE-SPACE + STRATEGY (CARD) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
 
-    edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
+edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
 
-    rows = len(edited)
-    tbl_height = min(720, 120 + 38 * rows)   # large enough to avoid scroll in most cases
-    st.markdown("**White-Space Scores (higher = more opportunity)**")
-    st.dataframe(
-        edited[["Firm","Offering_Nature","Value_Proposition","SME_Focus","AI_Explanation","White_Space_Score"]]
-        .sort_values("White_Space_Score", ascending=False),
-        use_container_width=True, height=tbl_height
-    )
+rows = len(edited)
+tbl_height = min(720, 120 + 38 * rows)   # avoid scrolling in most cases
+st.markdown("**White-Space Scores (higher = more opportunity)**")
+st.dataframe(
+    edited[["Firm","Offering_Nature","Value_Proposition","SME_Focus","AI_Explanation","White_Space_Score"]]
+    .sort_values("White_Space_Score", ascending=False),
+    use_container_width=True, height=tbl_height
+)
 
-    # Strategy recommendations (formerly "Suggested Differentiators")
-    sme_mean = edited["SME_Focus"].mean()
-    diffs = []
-    if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
-        diffs.append("Outcome-linked pricing for SMEs (fees tied to measured savings/throughput gains).")
-    else:
-        diffs.append("AI-enabled SME Strategy Studio (diagnostics dashboard + scenario simulations).")
-    if (edited["Offering_Nature"] < x_mean).sum() >= len(edited)//3:
-        diffs.append("Holistic transformation bundles for Tier-2/Tier-3 SMEs (strategy + process + analytics).")
-    else:
-        diffs.append("Sector playbooks with KPI blueprints for rapid rollout.")
+# Strategy recommendations
+sme_mean = edited["SME_Focus"].mean()
+diffs = []
+if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
+    diffs.append("Outcome-linked pricing for SMEs (fees tied to measured savings/throughput gains).")
+else:
+    diffs.append("AI-enabled SME Strategy Studio (diagnostics + scenario simulations).")
+if (edited["Offering_Nature"] < x_mean).sum() >= len(edited)//3:
+    diffs.append("Holistic transformation bundles for Tier-2/Tier-3 SMEs (strategy + process + analytics).")
+else:
+    diffs.append("Sector playbooks with KPI blueprints for rapid rollout.")
 
-    st.markdown("**Strategy Recommendations**")
-    st.success("\n".join([f"• {d}" for d in diffs]))
+st.markdown("**Strategy Recommendations**")
+st.success("\\n".join([f"• {d}" for d in diffs]))
 
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------------- EXPORT (card) ----------------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
-    csv_data = edited.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Download Current Data (CSV)", data=csv_data, file_name="firms_clean.csv", mime="text/csv")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ===================== 6) EXPORT (CARD) =====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
+csv_data = edited.to_csv(index=False).encode("utf-8")
+st.download_button("⬇️ Download Current Data (CSV)", data=csv_data, file_name="firms_clean.csv", mime="text/csv")
+st.markdown('</div>', unsafe_allow_html=True)
