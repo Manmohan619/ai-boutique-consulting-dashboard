@@ -50,7 +50,7 @@ st.markdown("""
 # ==================== HEADER ====================
 st.markdown("""
 <div class="top-banner">
-  <div class="title">AI-Integrated Competitor Map • Boutique Consulting (India, SMEs)</div>
+  <div class="title">AI-Integrated Competitor Map • Consulting – Boutique Firms (India, SMEs)</div>
   <div class="meta"><strong>Developed by:</strong> Manmohan Mahapatra &nbsp;|&nbsp;
   <strong>For:</strong> Entrepreneurship Individual Project – IIM Ranchi &nbsp;|&nbsp;
   <strong>Roll No:</strong> M16D-25</div>
