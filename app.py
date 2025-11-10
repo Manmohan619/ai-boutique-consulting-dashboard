@@ -9,7 +9,6 @@ st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)"
 # ==================== GLOBAL STYLES ====================
 st.markdown("""
 <style>
-/* Header banner */
 .top-banner{
   background: linear-gradient(90deg,#0f766e 0%,#2563eb 100%);
   color:#fff;padding:18px 22px;border-radius:14px;margin-bottom:16px;
@@ -18,7 +17,6 @@ st.markdown("""
 .top-banner .title{font-size:24px;font-weight:800;letter-spacing:.3px}
 .top-banner .meta{font-size:14px;opacity:.98;margin-top:6px}
 
-/* Card blocks – theme aware */
 .card{border-radius:14px;padding:16px 18px;margin:12px 0;border:1px solid}
 @media (prefers-color-scheme: dark){
   .card{background:#0f172a;border-color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.35)}
@@ -31,28 +29,22 @@ st.markdown("""
 .h3{font-weight:800;font-size:18px;margin-bottom:10px}
 .subtle{font-size:13px}
 
-/* Buttons */
 .stDownloadButton button,.stButton>button{
   background:#0f766e !important;color:#fff !important;border-radius:10px !important;font-weight:700 !important
 }
 .stDownloadButton button:hover,.stButton>button:hover{background:#115e59 !important}
-
-/* Soft border on tables */
 .stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
-
-/* Hide truly empty blocks (prevents blank ribbons) */
 .block-container > div:empty{display:none}
 
-/* ---- Chart wrapper for rounded border ---- */
+/* Chart wrapper with rounded border */
 .plot-card{
-  border:1.75px solid #000; border-radius:12px; overflow:hidden;
-  background: transparent;
-  padding:0; margin:0;
+  border:1.75px solid #000;
+  border-radius:12px;
+  background:#eefaFF;
+  padding:6px;
+  margin:0;
+  overflow:visible;   /* <-- allow axis titles to show */
 }
-
-/* Dark colorbar fallback */
-.plot-card .colorbar text,
-.plot-card .colorbar-title{ fill:#000000 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,7 +60,6 @@ st.markdown("""
 
 # ==================== HELPERS ====================
 def explain_row(on, vp, sme):
-    """Short natural-language explanation for the 3 scores."""
     def bucket(x):
         if x >= 8: return "high"
         if x >= 6: return "moderate"
@@ -81,7 +72,6 @@ def explain_row(on, vp, sme):
     return f"{a}, {b} {c}"
 
 def ws_interpretation(score: float) -> str:
-    """Human-readable inference for the white-space score."""
     if score >= 7.5:
         return "Very high opportunity (few rivals; strong SME value gap)"
     elif score >= 6.0:
@@ -118,7 +108,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
-# Add firm
 c1, c2, c3, c4, c5 = st.columns([0.32, 0.18, 0.18, 0.18, 0.14])
 new_name = c1.text_input("Firm name", placeholder="Enter firm name")
 new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
@@ -163,7 +152,7 @@ for i in range(len(st.session_state.df)):
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Snapshot + explanation
+# Snapshot
 edited = st.session_state.df.copy()
 edited["AI_Explanation"] = [
     explain_row(float(r["Offering_Nature"]), float(r["Value_Proposition"]), float(r["SME_Focus"]))
@@ -173,7 +162,6 @@ edited["AI_Explanation"] = [
 # ==================== 4) COMPETITOR MAP ====================
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">4) Competitor Map (Light-Blue Plot + Smart Labels)</div>', unsafe_allow_html=True)
-
 show_labels = st.checkbox("Show firm labels on chart", value=True)
 
 def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
@@ -203,38 +191,35 @@ fig = px.scatter(
     }
 )
 
-# Subtle light-blue plot; transparent paper for rounded wrapper
 fig.layout.plot_bgcolor = "#eefaFF"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# Axes: draw ticks & labels INSIDE so not clipped
+# ✅ Fix axis titles and labels (visible and bold)
 fig.update_xaxes(
     range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.4,
-    ticks="inside", ticklen=6, tickcolor="#000",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
+    ticks="outside", ticklen=6, tickcolor="#000",
     tickmode="linear", tick0=1, dtick=1,
-    ticklabelposition="inside",  # inside labels fix
     title_text="Nature of Offering (Functional → Holistic)",
-    title_font=dict(color="#000", size=14),
+    title_font=dict(color="#000", size=14, family="Arial Black"),
     tickfont=dict(color="#000", size=12),
 )
 fig.update_yaxes(
     range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.4,
-    ticks="inside", ticklen=6, tickcolor="#000",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
+    ticks="outside", ticklen=6, tickcolor="#000",
     tickmode="linear", tick0=1, dtick=1,
-    ticklabelposition="inside",
     title_text="Value Proposition (Cost → Innovation)",
-    title_font=dict(color="#000", size=14),
+    title_font=dict(color="#000", size=14, family="Arial Black"),
     tickfont=dict(color="#000", size=12),
 )
 
-# Labels dark + bubble outline
+# Labels + bubble outlines
 if show_labels:
     fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
 
-# Colorbar inside the plot with dark text
+# Colorbar inside plot
 fig.update_layout(
     coloraxis_colorbar=dict(
         title=dict(text="SME Focus", font=dict(color="#000", size=12)),
@@ -244,10 +229,10 @@ fig.update_layout(
         bgcolor="rgba(255,255,255,0.55)",
         outlinecolor="#000", outlinewidth=1
     ),
-    margin=dict(l=40, r=40, t=35, b=50)
+    margin=dict(l=60, r=60, t=40, b=70)
 )
 
-# Rounded border wrapper
+# Rounded wrapper
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig, use_container_width=True,
@@ -280,7 +265,7 @@ st.dataframe(
     use_container_width=True, height=tbl_height
 )
 
-# Strategy recommendations
+# Strategy suggestions
 sme_mean = edited["SME_Focus"].mean()
 diffs = []
 if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
