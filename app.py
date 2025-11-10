@@ -139,7 +139,7 @@ st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
 with st.container():  # keeps widget layout stable; avoids orphan artifacts
-    # stable uid for keys (prevents the "white ribbon" ghost slider)
+    # stable uid for keys (prevents "white ribbon" ghost widget)
     if "uid" not in st.session_state.df.columns:
         st.session_state.df["uid"] = [
             f'{i}_{str(r["Firm"]).strip().lower().replace(" ", "_") or "blank"}'
@@ -170,7 +170,7 @@ edited["AI_Explanation"] = [
 
 # ==================== 4) COMPETITOR MAP ====================
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="h3">4) Competitor Map (Professional Plot + In-Plot Axis Titles)</div>', unsafe_allow_html=True)
+st.markdown('<div class="h3">4) Competitor Map</div>', unsafe_allow_html=True)
 show_labels = st.checkbox("Show firm labels on chart", value=True)
 
 fig = px.scatter(
@@ -187,24 +187,25 @@ fig = px.scatter(
 fig.layout.plot_bgcolor = "#ffffff"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# --- Axes: keep numbers visible and dark ---
+# --- FORCE visible ticks and numbers (1..10) ---
+tick_vals = list(range(1, 11))
 fig.update_xaxes(
     title_text=None,
     range=[0.5, 10.5],
+    tickmode="array", tickvals=tick_vals,
+    showticklabels=True, ticks="outside", ticklen=6, tickcolor="#000",
+    tickfont=dict(color="#000", size=12, family="Inter, Arial"),
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#111", linewidth=1.1,
-    ticks="outside", ticklen=6, tickcolor="#111",
-    tickmode="linear", tick0=1, dtick=1,
-    showticklabels=True, tickfont=dict(color="#111", size=12, family="Inter, Arial, sans-serif"),
+    zeroline=False, showline=True, linecolor="#111", linewidth=1.2
 )
 fig.update_yaxes(
     title_text=None,
     range=[0.5, 10.5],
+    tickmode="array", tickvals=tick_vals,
+    showticklabels=True, ticks="outside", ticklen=6, tickcolor="#000",
+    tickfont=dict(color="#000", size=12, family="Inter, Arial"),
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#111", linewidth=1.1,
-    ticks="outside", ticklen=6, tickcolor="#111",
-    tickmode="linear", tick0=1, dtick=1,
-    showticklabels=True, tickfont=dict(color="#111", size=12, family="Inter, Arial, sans-serif"),
+    zeroline=False, showline=True, linecolor="#111", linewidth=1.2
 )
 
 # --- Bubble styling ---
@@ -212,7 +213,7 @@ if show_labels:
     fig.update_traces(textposition="top center", textfont=dict(color="#111", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#111")), cliponaxis=False)
 
-# --- In-plot axis titles (precise anchors; won’t cover ticks) ---
+# --- In-plot axis titles (dark) ---
 fig.update_layout(
     height=560,
     margin=dict(l=80, r=140, t=50, b=80),
@@ -249,7 +250,7 @@ st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig,
     use_container_width=True,
-    theme=None,  # ← important: prevents Streamlit dark theme from turning tick labels white
+    theme=None,  # critical so dark theme doesn't recolor ticks
     config={"displaylogo": False,
             "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":560,"width":1200}}
 )
