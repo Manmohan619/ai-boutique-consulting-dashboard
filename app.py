@@ -57,6 +57,42 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ==================== 0) OVERVIEW / HOW TO READ (DROPDOWN) ====================
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="h3">0) About this Dashboard</div>', unsafe_allow_html=True)
+with st.expander("📘 What this dashboard does & how to read the scores"):
+    st.markdown("""
+**Purpose**
+- Compare consulting firms on two strategic dimensions and highlight white-space opportunities for **SME** segments in India.
+
+**How to use**
+1. **Load or edit** the firm list and 1–10 scores.
+2. See the **Competitor Map** (bubble chart).  
+   - **X-axis** = *Nature of Offering* (Functional → Holistic)  
+   - **Y-axis** = *Value Proposition* (Cost → Innovation)  
+   - **Bubble size & color** = *SME Focus*
+3. Review the **White-Space table** and **Strategy suggestions**.
+
+**What the 1–10 scales mean**
+- Each dimension is rated on an **ordinal scale** (1 = low, 10 = high). Use relative benchmarking across firms.
+
+| Dimension | 1–3 (Low) | 4–6 (Mid) | 7–10 (High) |
+|---|---|---|---|
+| **Nature of Offering** | Narrow, functional projects (e.g., single-function ops fixes) | Multi-function programs with playbooks | **Holistic** E2E transformation (strategy → process → analytics) |
+| **Value Proposition** | **Cost-first**, efficiency, rate-cards | Balanced cost vs outcomes | **Innovation/impact-first**, outcomes, IP/analytics-led |
+| **SME Focus** | Limited SME reach | Selective SME plays | Deep/priority SME segment with tailored GTM, pricing & support |
+
+**Reading the bubbles**
+- **Right & up** = more holistic and more innovation-led.
+- **Bigger/greener bubbles** = stronger SME focus.
+- Labels can be toggled for clarity.
+
+**Notes**
+- The scoring is **relative** within your landscape; keep consistency when you add firms.
+- The white-space score blends position and SME focus to surface attractive niches.
+""")
+st.markdown('</div>', unsafe_allow_html=True)
+
 # ==================== HELPERS ====================
 def explain_row(on, vp, sme):
     def bucket(x):
@@ -194,7 +230,7 @@ fig.update_xaxes(
     title_font=dict(color="white", size=14, family="Arial Black"),
     title_standoff=22,
     tickmode="array", tickvals=tick_vals,
-    ticklabelposition="inside",              # numbers inside plot
+    ticklabelposition="inside",
     ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12),
     showticklabels=True,
@@ -210,7 +246,7 @@ fig.update_yaxes(
     title_font=dict(color="white", size=14, family="Arial Black"),
     title_standoff=22,
     tickmode="array", tickvals=tick_vals,
-    ticklabelposition="inside",              # numbers inside plot
+    ticklabelposition="inside",
     ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12),
     showticklabels=True,
@@ -225,7 +261,7 @@ if show_labels:
     fig.update_traces(textposition="top center", textfont=dict(color="#111", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#111")), cliponaxis=False)
 
-# Layout: space for outside titles
+# Layout: room for outside titles; SME colorbar intact
 fig.update_layout(
     height=560,
     margin=dict(l=110, r=140, t=50, b=110),
@@ -240,12 +276,12 @@ fig.update_layout(
     ),
 )
 
-# Render full-width; prevent Streamlit theme from recoloring
+# Render
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig,
     use_container_width=True,
-    theme=None,
+    theme=None,  # prevents Streamlit theme recoloring
     config={"displaylogo": False,
             "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":560,"width":1200}}
 )
