@@ -3,66 +3,53 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ===================== PAGE CONFIG =====================
-st.set_page_config(
-    page_title="AI Dashboard | Boutique Consulting (India, SMEs)",
-    layout="wide"
-)
+# ============== PAGE CONFIG ==============
+st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)", layout="wide")
 
-# ===================== GLOBAL STYLE =====================
+# ============== GLOBAL STYLE (card layout, theme-aware) ==============
 st.markdown("""
 <style>
-/* App background (works in light/dark) */
-html, body, .stApp { background: #0b122000; }  /* transparent, use Streamlit theme */
-
 /* Header banner */
-.top-banner {
-  background: linear-gradient(90deg, #0f766e 0%, #2563eb 100%); /* teal -> indigo */
-  color: #fff;
-  padding: 18px 22px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-  box-shadow: 0 8px 22px rgba(0,0,0,.10);
+.top-banner{
+  background: linear-gradient(90deg,#0f766e 0%,#2563eb 100%);
+  color:#fff;padding:18px 22px;border-radius:14px;margin-bottom:16px;
+  box-shadow:0 8px 22px rgba(0,0,0,.10)
 }
-.top-banner .title { font-size: 24px; font-weight: 800; letter-spacing:.3px; }
-.top-banner .meta  { font-size: 14px; opacity:.98; margin-top: 6px; }
+.top-banner .title{font-size:24px;font-weight:800;letter-spacing:.3px}
+.top-banner .meta{font-size:14px;opacity:.98;margin-top:6px}
 
-/* Card blocks */
-.card {
-  background: var(--card-bg, #ffffff);
-  border: 1px solid #e8ecf4;
-  border-radius: 14px;
-  padding: 16px 18px;
-  margin: 12px 0;
-  box-shadow: 0 6px 18px rgba(17,24,39,.06);
+/* Card blocks – auto adapt to theme */
+.card{border-radius:14px;padding:16px 18px;margin:12px 0;border:1px solid}
+@media (prefers-color-scheme: dark){
+  .card{background:#0f172a;border-color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .h3{color:#e5e7eb}
+  .subtle{color:#94a3b8}
+}
+@media (prefers-color-scheme: light){
+  .card{background:#ffffff;border-color:#e8ecf4;box-shadow:0 6px 18px rgba(17,24,39,.06)}
+  .h3{color:#0f172a}
+  .subtle{color:#475569}
 }
 
-/* Headings */
-.h3 { color:#0f172a; font-weight:800; font-size: 18px; margin-bottom: 10px; }
-.subtle { color:#475569; font-size: 13px; }
+/* Section headings */
+.h3{font-weight:800;font-size:18px;margin-bottom:10px}
+.subtle{font-size:13px}
 
 /* Buttons */
-.stDownloadButton button, .stButton>button {
-  background:#0f766e !important; color:#fff !important;
-  border-radius:10px !important; font-weight:700 !important;
+.stDownloadButton button,.stButton>button{
+  background:#0f766e !important;color:#fff !important;border-radius:10px !important;font-weight:700 !important
 }
-.stDownloadButton button:hover, .stButton>button:hover { background:#115e59 !important; }
+.stDownloadButton button:hover,.stButton>button:hover{background:#115e59 !important}
 
-/* Table border radius */
-.stDataFrame { border: 1px solid #e5e7eb; border-radius: 10px; }
+/* Dataframe soft border */
+.stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
 
-/* Firm row mini-card */
-.firm-row {
-  border:1px solid #edf0f6; border-radius:12px;
-  padding:10px 12px; margin:8px 0; background:#fbfdff;
-}
-
-/* IMPORTANT: Do NOT paint generic divs (this caused the white pills). */
-/* Removed the old broad slider track rule that created blank white bars. */
+/* Remove any stray spacing blocks (prevents “white pills”) */
+.block-container > div:empty{display:none}
 </style>
 """, unsafe_allow_html=True)
 
-# ===================== HEADER =====================
+# ============== HEADER ==============
 st.markdown("""
 <div class="top-banner">
   <div class="title">AI-Integrated Competitor Map • Boutique Consulting (India, SMEs)</div>
@@ -72,7 +59,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ===================== UTIL: dynamic explanation =====================
+# ============== Helper: dynamic explanation text ==============
 def explain_row(on, vp, sme):
     def bucket(x):
         if x >= 8: return "high"
@@ -85,7 +72,7 @@ def explain_row(on, vp, sme):
     c = "with strong SME engagement." if sme_b=="high" else "with selective SME reach." if sme_b=="moderate" else "with limited SME focus."
     return f"{a}, {b} {c}"
 
-# ===================== 1) LOAD DATA (CARD) =====================
+# ============== 1) LOAD DATA (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">1) Load Data</div>', unsafe_allow_html=True)
 
@@ -99,28 +86,27 @@ for c in ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]:
 if "df" not in st.session_state:
     st.session_state.df = base_df.copy()
 
-cols = st.columns([0.2, 0.8])
-with cols[0]:
+c_reset, c_tip = st.columns([0.22, 0.78])
+with c_reset:
     if st.button("Reset to Loaded Data"):
         st.session_state.df = base_df.copy()
         st.success("Data reset.")
-with cols[1]:
+with c_tip:
     st.markdown('<div class="subtle">Tip: Add firms below and adjust scores with sliders. Changes apply instantly.</div>', unsafe_allow_html=True)
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===================== 2) MANAGE FIRMS (CARD) =====================
+# ============== 2) MANAGE FIRMS (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
-# Add firm inline (visible)
+# Add firm – always visible (no dropdowns)
 st.markdown("**Add a new firm**")
-c1, c2, c3, c4 = st.columns([0.34, 0.22, 0.22, 0.22])
+c1, c2, c3, c4, c5 = st.columns([0.32, 0.18, 0.18, 0.18, 0.14])
 new_name = c1.text_input("Firm name", placeholder="Enter firm name")
 new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
 new_vp   = c3.slider("Value_Proposition", 1, 10, 6, key="add_vp")
 new_sme  = c4.slider("SME_Focus", 1, 10, 6, key="add_sme")
-if st.button("Add firm"):
+if c5.button("Add firm"):
     if new_name.strip():
         st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([{
             "Firm": new_name.strip(),
@@ -132,26 +118,24 @@ if st.button("Add firm"):
     else:
         st.error("Please enter a firm name.")
 
-# Delete firms
 st.markdown("---")
 st.markdown("**Delete firms**")
-d1, d2 = st.columns([0.6, 0.4])
+d1, d2 = st.columns([0.72, 0.28])
 with d1:
     to_delete = st.multiselect("Select firm(s) to delete", options=st.session_state.df["Firm"].tolist())
 with d2:
     if st.button("Delete selected"):
         st.session_state.df = st.session_state.df[~st.session_state.df["Firm"].isin(to_delete)].reset_index(drop=True)
         st.success("Selected firms deleted.")
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===================== 3) EDIT SCORES (CARD, ALWAYS VISIBLE) =====================
+# ============== 3) EDIT SCORES (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust scores below. Changes apply instantly.</div>', unsafe_allow_html=True)
+st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
 for i in range(len(st.session_state.df)):
     row = st.session_state.df.loc[i]
-    st.markdown(f'<div class="firm-row"><div style="font-weight:700;color:#0f172a;margin-bottom:8px;">{row["Firm"] if row["Firm"] else f"Firm {i+1}"}</div></div>', unsafe_allow_html=True)
+    st.write(f"**{row['Firm'] if row['Firm'] else f'Firm {i+1}'}**")
     cols = st.columns([0.34, 0.22, 0.22, 0.22])
     name = cols[0].text_input("Firm", value=str(row["Firm"]), key=f"name_{i}")
     on   = cols[1].slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{i}")
@@ -161,87 +145,77 @@ for i in range(len(st.session_state.df)):
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Snapshot edited data + explanation
+# Snapshot + explanation
 edited = st.session_state.df.copy()
 edited["AI_Explanation"] = [
     explain_row(float(r["Offering_Nature"]), float(r["Value_Proposition"]), float(r["SME_Focus"]))
     for _, r in edited.iterrows()
 ]
 
-# ===================== 4) COMPETITOR MAP (CARD) =====================
+# ============== 4) COMPETITOR MAP (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="h3">4) Competitor Map (White Background + Smart Labels)</div>', unsafe_allow_html=True)
+st.markdown('<div class="h3">4) Competitor Map (White Plot + Smart Labels)</div>', unsafe_allow_html=True)
 
 show_labels = st.checkbox("Show firm labels on chart", value=True)
 
 def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
-    positions = []
-    order = ["top center", "top left", "top right", "bottom left",
-             "bottom right", "middle left", "middle right", "bottom center"]
+    positions, order = [], ["top center","top left","top right","bottom left","bottom right","middle left","middle right","bottom center"]
     for i, r in df.iterrows():
         pos = "top center"
         for j in range(0, i):
-            dx = abs(r[xcol] - df.iloc[j][xcol])
-            dy = abs(r[ycol] - df.iloc[j][ycol])
+            dx = abs(r[xcol] - df.iloc[j][xcol]); dy = abs(r[ycol] - df.iloc[j][ycol])
             if dx < 0.45 and dy < 0.45:
                 k = int((dx + dy) * 10) % len(order)
-                pos = order[k]
-                break
+                pos = order[k]; break
         positions.append(pos)
     return positions
 
+# Build figure (avoid version-sensitive layout args)
 fig = px.scatter(
     edited,
     x="Offering_Nature", y="Value_Proposition",
     size="SME_Focus", color="SME_Focus",
     text="Firm" if show_labels else None,
-    color_continuous_scale=px.colors.sequential.Viridis,   # complements header
-    hover_data=["AI_Explanation"], template="plotly_white",
+    color_continuous_scale=px.colors.sequential.Viridis,
+    hover_data=["AI_Explanation"],
+    template="plotly_white",
     labels={
-        "Offering_Nature": "Nature of Offering (Functional → Holistic)",
-        "Value_Proposition": "Value Proposition (Cost → Innovation)",
-        "SME_Focus": "SME Focus"
+        "Offering_Nature":"Nature of Offering (Functional → Holistic)",
+        "Value_Proposition":"Value Proposition (Cost → Innovation)",
+        "SME_Focus":"SME Focus"
     }
 )
+
 if show_labels:
-    fig.update_traces(textposition=choose_positions(edited),
-                      textfont=dict(color="#000000", size=12))
-fig.update_traces(marker=dict(line=dict(width=2, color="#000000")), cliponaxis=False)
+    fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
+fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
+
+# Minimal, robust layout (keeps axes/ticks black, white plot area)
 fig.update_layout(
-    height=640, paper_bgcolor="white", plot_bgcolor="white",
-    font=dict(color="#000000", size=14),
-    xaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
-               tickfont=dict(color="#000000", size=13),
-               titlefont=dict(color="#000000", size=16),
-               zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
-    yaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#cfd3d9",
-               tickfont=dict(color="#000000", size=13),
-               titlefont=dict(color="#000000", size=16),
-               zeroline=False, linecolor="#000000", linewidth=1.4, mirror=True),
-    margin=dict(l=10, r=10, t=30, b=10), showlegend=False
+    height=640,
+    margin=dict(l=10, r=10, t=30, b=10),
 )
+fig.update_xaxes(range=[0.5,10.5], showgrid=True, gridcolor="#cfd3d9", zeroline=False, linecolor="#000", linewidth=1.2)
+fig.update_yaxes(range=[0.5,10.5], showgrid=True, gridcolor="#cfd3d9", zeroline=False, linecolor="#000", linewidth=1.2)
+
 st.plotly_chart(
     fig, use_container_width=True,
-    config={
-        "displaylogo": False,
-        "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":640,"width":1100}
-    }
+    config={"displaylogo": False,
+            "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":640,"width":1100}}
 )
 
 x_mean = float(edited["Offering_Nature"].mean())
 y_mean = float(edited["Value_Proposition"].mean())
-st.caption(f"Mean reference (for clustering): Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
+st.caption(f"Mean reference: Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===================== 5) WHITE-SPACE + STRATEGY (CARD) =====================
+# ============== 5) WHITE-SPACE + STRATEGY (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
 
 edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
-
-rows = len(edited)
-tbl_height = min(720, 120 + 38 * rows)   # avoid scrolling in most cases
+rows = len(edited); tbl_height = min(720, 120 + 38 * rows)
 st.markdown("**White-Space Scores (higher = more opportunity)**")
 st.dataframe(
     edited[["Firm","Offering_Nature","Value_Proposition","SME_Focus","AI_Explanation","White_Space_Score"]]
@@ -249,7 +223,6 @@ st.dataframe(
     use_container_width=True, height=tbl_height
 )
 
-# Strategy recommendations
 sme_mean = edited["SME_Focus"].mean()
 diffs = []
 if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
@@ -262,11 +235,10 @@ else:
     diffs.append("Sector playbooks with KPI blueprints for rapid rollout.")
 
 st.markdown("**Strategy Recommendations**")
-st.success("\\n".join([f"• {d}" for d in diffs]))
-
+st.success("\n".join([f"• {d}" for d in diffs]))
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===================== 6) EXPORT (CARD) =====================
+# ============== 6) EXPORT (CARD) ==============
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
 csv_data = edited.to_csv(index=False).encode("utf-8")
