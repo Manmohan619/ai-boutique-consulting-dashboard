@@ -2,8 +2,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from io import StringIO
-import base64
 
 st.set_page_config(page_title="Boutique Consulting – SME Competitor Map", layout="wide")
 
@@ -21,6 +19,7 @@ with st.expander("About this dashboard", expanded=False):
 
 # -------- Data Input --------
 st.subheader("1) Load or Edit Data")
+
 default = pd.read_csv("firms.csv")
 uploaded = st.file_uploader("Upload firms.csv (optional)", type=["csv"])
 if uploaded:
@@ -28,7 +27,6 @@ if uploaded:
 else:
     df = default.copy()
 
-# Inline editor
 edited = st.data_editor(
     df,
     use_container_width=True,
@@ -38,11 +36,10 @@ edited = st.data_editor(
         "Offering_Nature": st.column_config.NumberColumn(min_value=1, max_value=10, step=1),
         "Value_Proposition": st.column_config.NumberColumn(min_value=1, max_value=10, step=1),
         "SME_Focus": st.column_config.NumberColumn(min_value=1, max_value=10, step=1),
-    }
+    },
 )
 
-# Validate
-required_cols = {"Firm","Offering_Nature","Value_Proposition","SME_Focus"}
+required_cols = {"Firm", "Offering_Nature", "Value_Proposition", "SME_Focus"}
 if not required_cols.issubset(edited.columns):
     st.error("CSV must include columns: Firm, Offering_Nature, Value_Proposition, SME_Focus")
     st.stop()
@@ -55,20 +52,18 @@ fig = px.scatter(
     y="Value_Proposition",
     text="Firm",
     size="SME_Focus",
-    hover_data=["SME_Focus","Evidence_Notes"] if "Evidence_Notes" in edited.columns else ["SME_Focus"],
+    hover_data=["SME_Focus", "Evidence_Notes"] if "Evidence_Notes" in edited.columns else ["SME_Focus"],
     labels={
-        "Offering_Nature":"Nature of Offering (Functional → Holistic)",
-        "Value_Proposition":"Value Proposition (Cost Efficiency → Innovation)",
+        "Offering_Nature": "Nature of Offering (Functional → Holistic)",
+        "Value_Proposition": "Value Proposition (Cost Efficiency → Innovation)",
     },
 )
 fig.update_traces(textposition="top center")
-fig.update_layout(height=600, xaxis=dict(range=[0.5,10.5]), yaxis=dict(range=[0.5,10.5]), hovermode="closest")
+fig.update_layout(height=600, xaxis=dict(range=[0.5, 10.5]), yaxis=dict(range=[0.5, 10.5]), hovermode="closest")
 st.plotly_chart(fig, use_container_width=True)
 
-# Quadrant lines
 x_mean = float(edited["Offering_Nature"].mean())
 y_mean = float(edited["Value_Proposition"].mean())
-
 st.caption(f"Mean lines — Offering_Nature: **{x_mean:.2f}**, Value_Proposition: **{y_mean:.2f}**")
 
 # -------- White-space & Differentiators --------
@@ -76,17 +71,16 @@ st.subheader("3) White-Space & Differentiators")
 
 edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
 
-left, right = st.columns([1,1])
+left, right = st.columns([1, 1])
 with left:
     st.markdown("**Computed White_Space_Score (higher suggests potential opportunity)**")
     st.dataframe(
-        edited[["Firm","Offering_Nature","Value_Proposition","SME_Focus","White_Space_Score"]]
+        edited[["Firm", "Offering_Nature", "Value_Proposition", "SME_Focus", "White_Space_Score"]]
         .sort_values("White_Space_Score", ascending=False),
-        use_container_width=True
+        use_container_width=True,
     )
 
 with right:
-    # Rule-based differentiators
     sme_mean = float(edited["SME_Focus"].mean())
     diffs = []
     if (edited["Value_Proposition"] > y_mean).sum() >= len(edited) // 2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited) // 3:
@@ -104,27 +98,21 @@ with right:
 st.subheader("4) AI Transparency Log (paste your prompts)")
 prompt_text = st.text_area(
     "Paste prompts/interactions with AI (this will be downloadable as a TXT)",
-    value=(
-        "Core Prompt: List Indian boutique consulting firms serving SMEs and score them (1–10) on:
-"
-        " (a) Nature of Offering (functional → holistic),
- (b) Value Proposition (cost-efficiency → innovation),
- (c) SME focus.
-"
-        "Provide 1–2 lines of evidence per firm.
+    value="""Core Prompt: List Indian boutique consulting firms serving SMEs and score them (1–10) on:
+(a) Nature of Offering (functional → holistic),
+(b) Value Proposition (cost-efficiency → innovation),
+(c) SME focus.
+Provide 1–2 lines of evidence per firm.
 
-"
-        "Follow-ups:
-"
-        "1) Suggest a 2×2 competitor map and quadrant meanings.
-"
-        "2) Based on clustering, identify white spaces and two differentiators."
-    ),
-    height=160
+Follow-ups:
+1) Suggest a 2×2 competitor map and quadrant meanings.
+2) Based on clustering, identify white spaces and two differentiators.""",
+    height=160,
 )
 
 # -------- Downloads --------
 st.subheader("5) Export for Annexure")
+
 def make_downloadable_csv(df: pd.DataFrame):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("Download current data (CSV)", data=csv, file_name="firms_clean.csv", mime="text/csv")
@@ -135,5 +123,4 @@ def make_downloadable_txt(txt: str, name: str):
 make_downloadable_csv(edited)
 make_downloadable_txt(prompt_text, "Download AI Prompt Log (TXT)")
 
-st.success("Done. Add the PNG screenshot(s) of the plot and these downloads to your Annexure.")
-
+st.success("✅ Dashboard ready. Add screenshot(s) and downloads to your Annexure.")
