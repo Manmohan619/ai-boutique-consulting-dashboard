@@ -3,52 +3,52 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ==================== PAGE CONFIG ====================
+# ---------------------------- PAGE CONFIG ----------------------------
 st.set_page_config(page_title="AI Dashboard | Boutique Consulting (India, SMEs)", layout="wide")
 
-# ==================== GLOBAL STYLES ====================
+# ---------------------------- GLOBAL STYLES --------------------------
 st.markdown("""
 <style>
 .top-banner{
   background: linear-gradient(90deg,#0f766e 0%,#2563eb 100%);
-  color:#fff;padding:18px 22px;border-radius:14px;margin-bottom:16px;
+  color:#fff; padding:18px 22px; border-radius:14px; margin-bottom:16px;
   box-shadow:0 8px 22px rgba(0,0,0,.10)
 }
-.top-banner .title{font-size:24px;font-weight:800;letter-spacing:.3px}
-.top-banner .meta{font-size:14px;opacity:.98;margin-top:6px}
+.top-banner .title{font-size:24px; font-weight:800; letter-spacing:.3px}
+.top-banner .meta{font-size:14px; opacity:.98; margin-top:6px}
 
-.card{border-radius:14px;padding:16px 18px;margin:12px 0;border:1px solid}
+.card{border-radius:14px; padding:16px 18px; margin:12px 0; border:1px solid}
 @media (prefers-color-scheme: dark){
-  .card{background:#0f172a;border-color:#1f2937;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .card{background:#0f172a; border-color:#1f2937; box-shadow:0 6px 18px rgba(0,0,0,.35)}
   .h3{color:#e5e7eb}.subtle{color:#94a3b8}
 }
 @media (prefers-color-scheme: light){
-  .card{background:#ffffff;border-color:#e8ecf4;box-shadow:0 6px 18px rgba(17,24,39,.06)}
+  .card{background:#ffffff; border-color:#e8ecf4; box-shadow:0 6px 18px rgba(17,24,39,.06)}
   .h3{color:#0f172a}.subtle{color:#475569}
 }
-.h3{font-weight:800;font-size:18px;margin-bottom:10px}
+.h3{font-weight:800; font-size:18px; margin-bottom:10px}
 .subtle{font-size:13px}
 
 .stDownloadButton button,.stButton>button{
-  background:#0f766e !important;color:#fff !important;border-radius:10px !important;font-weight:700 !important
+  background:#0f766e !important; color:#fff !important; border-radius:10px !important; font-weight:700 !important
 }
 .stDownloadButton button:hover,.stButton>button:hover{background:#115e59 !important}
-.stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
+.stDataFrame{border:1px solid #e5e7eb; border-radius:10px}
 .block-container > div:empty{display:none}
 
 /* Chart wrapper with rounded border */
 .plot-card{
   border:1.75px solid #000;
   border-radius:12px;
-  background:#eefaFF;
+  background:#eefaFF;      /* same as plot bg for seamless look */
   padding:6px;
   margin:0;
-  overflow:visible;   /* allow internal titles */
+  overflow:visible;         /* allow annotations (titles) to show if needed */
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== HEADER ====================
+# ---------------------------- HEADER --------------------------------
 st.markdown("""
 <div class="top-banner">
   <div class="title">AI-Integrated Competitor Map • Boutique Consulting (India, SMEs)</div>
@@ -58,7 +58,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ==================== HELPERS ====================
+# ---------------------------- HELPERS -------------------------------
 def explain_row(on, vp, sme):
     def bucket(x):
         if x >= 8: return "high"
@@ -72,16 +72,12 @@ def explain_row(on, vp, sme):
     return f"{a}, {b} {c}"
 
 def ws_interpretation(score: float) -> str:
-    if score >= 7.5:
-        return "Very high opportunity (few rivals; strong SME value gap)"
-    elif score >= 6.0:
-        return "High opportunity (attractive niche to pursue)"
-    elif score >= 4.5:
-        return "Moderate (differentiation needed to win)"
-    else:
-        return "Low (crowded or weak value pocket)"
+    if score >= 7.5: return "Very high opportunity (few rivals; strong SME value gap)"
+    if score >= 6.0: return "High opportunity (attractive niche to pursue)"
+    if score >= 4.5: return "Moderate (differentiation needed to win)"
+    return "Low (crowded or weak value pocket)"
 
-# ==================== 1) LOAD DATA ====================
+# ---------------------------- 1) LOAD DATA --------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">1) Load Data</div>', unsafe_allow_html=True)
 
@@ -95,16 +91,16 @@ for c in ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]:
 if "df" not in st.session_state:
     st.session_state.df = base_df.copy()
 
-c_reset, c_tip = st.columns([0.22, 0.78])
-with c_reset:
+cols_r, cols_tip = st.columns([0.22, 0.78])
+with cols_r:
     if st.button("Reset to Loaded Data"):
         st.session_state.df = base_df.copy()
         st.success("Data reset.")
-with c_tip:
+with cols_tip:
     st.markdown('<div class="subtle">Tip: Add firms below and adjust scores with sliders. Changes apply instantly.</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== 2) MANAGE FIRMS ====================
+# ---------------------------- 2) MANAGE FIRMS -----------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
@@ -125,7 +121,6 @@ if c5.button("Add firm"):
     else:
         st.error("Please enter a firm name.")
 
-# Delete firms
 st.markdown("**Delete firms**")
 d1, d2 = st.columns([0.72, 0.28])
 with d1:
@@ -136,10 +131,9 @@ with d2:
         st.success("Selected firms deleted.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== 3) EDIT SCORES (SLIDERS) ====================
+# ---------------------------- 3) EDIT SCORES ------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
-
 for i in range(len(st.session_state.df)):
     row = st.session_state.df.loc[i]
     st.write(f"**{row['Firm'] if row['Firm'] else f'Firm {i+1}'}**")
@@ -149,7 +143,6 @@ for i in range(len(st.session_state.df)):
     vp   = cols[2].slider("Value_Proposition", 1, 10, int(row["Value_Proposition"]), key=f"vp_{i}")
     sme  = cols[3].slider("SME_Focus", 1, 10, int(row["SME_Focus"]), key=f"sme_{i}")
     st.session_state.df.loc[i, ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]] = [name, on, vp, sme]
-
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Snapshot
@@ -159,7 +152,7 @@ edited["AI_Explanation"] = [
     for _, r in edited.iterrows()
 ]
 
-# ==================== 4) COMPETITOR MAP ====================
+# ---------------------------- 4) COMPETITOR MAP ---------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">4) Competitor Map (Light-Blue Plot + Smart Labels)</div>', unsafe_allow_html=True)
 show_labels = st.checkbox("Show firm labels on chart", value=True)
@@ -186,45 +179,48 @@ fig = px.scatter(
     template="plotly_white"
 )
 
-# === Fixed axis titles as in-plot annotations ===
+# Plot/paper colors
+fig.layout.plot_bgcolor = "#eefaFF"
+fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
+
+# ------------- Ticks & labels INSIDE; real titles OFF ---------------
 fig.update_xaxes(
     range=[0.5, 10.5], showgrid=True, gridcolor="#cfd4da",
     zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
     ticks="inside", ticklen=6, tickcolor="#000",
     tickmode="linear", tick0=1, dtick=1,
-    ticklabelposition="inside", title=None
+    ticklabelposition="inside", showticklabels=True, title=None
 )
 fig.update_yaxes(
     range=[0.5, 10.5], showgrid=True, gridcolor="#cfd4da",
     zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
     ticks="inside", ticklen=6, tickcolor="#000",
     tickmode="linear", tick0=1, dtick=1,
-    ticklabelposition="inside", title=None
+    ticklabelposition="inside", showticklabels=True, title=None
 )
 
+# ------------- Colorbar & margins (prevent cropping) ----------------
 fig.update_layout(
     coloraxis_colorbar=dict(
         title=dict(text="SME Focus", font=dict(color="#000", size=12)),
         tickfont=dict(color="#000", size=11),
-        x=0.985, xanchor="right", y=0.5, yanchor="middle",
-        len=0.9, thickness=12,
+        x=0.98, xanchor="right", y=0.5, yanchor="middle",
+        len=0.86, thickness=12,
         bgcolor="rgba(255,255,255,0.55)",
         outlinecolor="#000", outlinewidth=1
     ),
-    plot_bgcolor="#eefaFF",
-    paper_bgcolor="rgba(0,0,0,0)",
-    margin=dict(l=60, r=60, t=40, b=70)
+    margin=dict(l=85, r=90, t=38, b=85)  # generous margins for crisp edges
 )
 
-# --- Add in-plot axis titles (not clipped) ---
+# ------------- In-plot axis titles (annotations; never clipped) -----
 fig.add_annotation(
-    x=0.5, y=0.03, xref="paper", yref="paper",
+    x=0.50, y=0.055, xref="paper", yref="paper",
     text="Nature of Offering (Functional → Holistic)",
     showarrow=False, align="center",
     font=dict(color="#000", size=15, family="Arial Black")
 )
 fig.add_annotation(
-    x=0.02, y=0.5, xref="paper", yref="paper",
+    x=0.045, y=0.50, xref="paper", yref="paper",
     text="Value Proposition (Cost → Innovation)",
     showarrow=False, textangle=-90, align="center",
     font=dict(color="#000", size=15, family="Arial Black")
@@ -235,7 +231,7 @@ if show_labels:
     fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
 
-# Render
+# Render with rounded card
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
 st.markdown('</div>', unsafe_allow_html=True)
@@ -243,10 +239,9 @@ st.markdown('</div>', unsafe_allow_html=True)
 x_mean = float(edited["Offering_Nature"].mean())
 y_mean = float(edited["Value_Proposition"].mean())
 st.caption(f"Mean reference: Offering_Nature **{x_mean:.2f}**, Value_Proposition **{y_mean:.2f}**")
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== 5) WHITE-SPACE + STRATEGY ====================
+# ---------------------------- 5) WHITE-SPACE ------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
 
@@ -258,12 +253,11 @@ st.dataframe(
         "Firm","Offering_Nature","Value_Proposition","SME_Focus",
         "AI_Explanation","White_Space_Score","WS_Interpretation"
     ]].sort_values("White_Space_Score", ascending=False),
-    use_container_width=True, height=400
+    use_container_width=True, height=420
 )
-
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== 6) EXPORT ====================
+# ---------------------------- 6) EXPORT -----------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
 csv_data = edited.to_csv(index=False).encode("utf-8")
