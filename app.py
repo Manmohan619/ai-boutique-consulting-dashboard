@@ -50,7 +50,7 @@ st.markdown("""
   padding:0; margin:0;
 }
 
-/* Fallback darkening for colorbar text if Plotly ignores font settings */
+/* Dark colorbar fallback */
 .plot-card .colorbar text,
 .plot-card .colorbar-title{ fill:#000000 !important; }
 </style>
@@ -203,26 +203,30 @@ fig = px.scatter(
     }
 )
 
-# Subtle light-blue plot; transparent paper so wrapper shows rounded corners
+# Subtle light-blue plot; transparent paper for rounded wrapper
 fig.layout.plot_bgcolor = "#eefaFF"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# Axes: force visible ticks & labels
+# Axes: draw ticks & labels INSIDE so not clipped
 fig.update_xaxes(
     range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.4, mirror=True,
-    showticklabels=True, ticks='outside', ticklen=6, tickcolor="#000",
-    tickmode='linear', tick0=1, dtick=1,
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.4,
+    ticks="inside", ticklen=6, tickcolor="#000",
+    tickmode="linear", tick0=1, dtick=1,
+    ticklabelposition="inside",  # inside labels fix
     title_text="Nature of Offering (Functional → Holistic)",
-    title_font=dict(color="#000", size=14), tickfont=dict(color="#000", size=12)
+    title_font=dict(color="#000", size=14),
+    tickfont=dict(color="#000", size=12),
 )
 fig.update_yaxes(
     range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#000", linewidth=1.4, mirror=True,
-    showticklabels=True, ticks='outside', ticklen=6, tickcolor="#000",
-    tickmode='linear', tick0=1, dtick=1,
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.4,
+    ticks="inside", ticklen=6, tickcolor="#000",
+    tickmode="linear", tick0=1, dtick=1,
+    ticklabelposition="inside",
     title_text="Value Proposition (Cost → Innovation)",
-    title_font=dict(color="#000", size=14), tickfont=dict(color="#000", size=12)
+    title_font=dict(color="#000", size=14),
+    tickfont=dict(color="#000", size=12),
 )
 
 # Labels dark + bubble outline
@@ -230,25 +234,20 @@ if show_labels:
     fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
 
-# Colorbar INSIDE the plot with dark text (and a subtle readable backdrop)
-try:
-    fig.update_layout(
-        coloraxis_colorbar=dict(
-            title=dict(text="SME Focus", font=dict(color="#000", size=12)),
-            tickfont=dict(color="#000", size=11),
-            x=0.985, xanchor="right", y=0.5, yanchor="middle",
-            len=0.9, thickness=12,
-            bgcolor="rgba(255,255,255,0.55)",
-            outlinecolor="#000", outlinewidth=1
-        )
-    )
-except Exception:
-    pass
+# Colorbar inside the plot with dark text
+fig.update_layout(
+    coloraxis_colorbar=dict(
+        title=dict(text="SME Focus", font=dict(color="#000", size=12)),
+        tickfont=dict(color="#000", size=11),
+        x=0.985, xanchor="right", y=0.5, yanchor="middle",
+        len=0.9, thickness=12,
+        bgcolor="rgba(255,255,255,0.55)",
+        outlinecolor="#000", outlinewidth=1
+    ),
+    margin=dict(l=40, r=40, t=35, b=50)
+)
 
-# Slightly wider margins to guarantee tick labels show
-fig.update_layout(margin=dict(l=40, r=40, t=35, b=50))
-
-# Render inside rounded border card
+# Rounded border wrapper
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig, use_container_width=True,
@@ -281,7 +280,7 @@ st.dataframe(
     use_container_width=True, height=tbl_height
 )
 
-# Strategy recommendations (simple rules on distribution)
+# Strategy recommendations
 sme_mean = edited["SME_Focus"].mean()
 diffs = []
 if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
