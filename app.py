@@ -10,7 +10,7 @@ st.markdown("""
 <style>
 .top-banner{
   background: linear-gradient(90deg,#0f766e 0%,#2563eb 100%);
-  color:#fff;padding:18px 22px;border-radius:14px;margin-bottom:16px;
+  color:#fff; padding:18px 22px; border-radius:14px; margin-bottom:16px;
   box-shadow:0 8px 22px rgba(0,0,0,.10)
 }
 .top-banner .title{font-size:24px;font-weight:800;letter-spacing:.3px}
@@ -29,19 +29,20 @@ st.markdown("""
 .subtle{font-size:13px}
 
 .stDownloadButton button,.stButton>button{
-  background:#0f766e !important;color:#fff !important;border-radius:10px !important;font-weight:700 !important
+  background:#0f766e !important; color:#fff !important; border-radius:10px !important; font-weight:700 !important
 }
 .stDownloadButton button:hover,.stButton>button:hover{background:#115e59 !important}
 .stDataFrame{border:1px solid #e5e7eb;border-radius:10px}
 .block-container > div:empty{display:none}
 
+/* Chart wrapper with rounded border */
 .plot-card{
-  border:1.75px solid #000;
+  border:1.25px solid #e5e7eb;
   border-radius:12px;
-  background:#eefaFF;
-  padding:6px;
+  background:#ffffff;
+  padding:8px 10px 2px 10px;
   margin:0;
-  overflow:visible;
+  overflow:visible; /* allow in-plot annotations to show */
 }
 </style>
 """, unsafe_allow_html=True)
@@ -137,19 +138,30 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
-for i in range(len(st.session_state.df)):
-    row = st.session_state.df.loc[i]
-    st.write(f"**{row['Firm'] if row['Firm'] else f'Firm {i+1}'}**")
-    cols = st.columns([0.34, 0.22, 0.22, 0.22])
-    name = cols[0].text_input("Firm", value=str(row["Firm"]), key=f"name_{i}")
-    on   = cols[1].slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{i}")
-    vp   = cols[2].slider("Value_Proposition", 1, 10, int(row["Value_Proposition"]), key=f"vp_{i}")
-    sme  = cols[3].slider("SME_Focus", 1, 10, int(row["SME_Focus"]), key=f"sme_{i}")
-    st.session_state.df.loc[i, ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]] = [name, on, vp, sme]
+with st.container():  # keeps widget layout stable; avoids orphan artifacts
+    # create a stable uid for keys (prevents the "white ribbon" slider ghost)
+    if "uid" not in st.session_state.df.columns:
+        st.session_state.df["uid"] = [
+            f'{i}_{str(r["Firm"]).strip().lower().replace(" ", "_") or "blank"}'
+            for i, r in st.session_state.df.reset_index().iterrows()
+        ]
 
+    for i in range(len(st.session_state.df)):
+        row = st.session_state.df.loc[i]
+        title = row['Firm'] if row['Firm'] else f'Firm {i+1}'
+        st.write(f"**{title}**")
+
+        uid = row["uid"]
+        cols = st.columns([0.34, 0.22, 0.22, 0.22])
+        name = cols[0].text_input("Firm", value=str(row["Firm"]), key=f"name_{uid}")
+        on   = cols[1].slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{uid}")
+        vp   = cols[2].slider("Value_Proposition", 1, 10, int(row["Value_Proposition"]), key=f"vp_{uid}")
+        sme  = cols[3].slider("SME_Focus", 1, 10, int(row["SME_Focus"]), key=f"sme_{uid}")
+
+        st.session_state.df.loc[i, ["Firm","Offering_Nature","Value_Proposition","SME_Focus"]] = [name, on, vp, sme]
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Snapshot
+# Snapshot for plots/tables
 edited = st.session_state.df.copy()
 edited["AI_Explanation"] = [
     explain_row(float(r["Offering_Nature"]), float(r["Value_Proposition"]), float(r["SME_Focus"]))
@@ -158,21 +170,10 @@ edited["AI_Explanation"] = [
 
 # ==================== 4) COMPETITOR MAP ====================
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="h3">4) Competitor Map (Light-Blue Plot + Smart Labels)</div>', unsafe_allow_html=True)
+st.markdown('<div class="h3">4) Competitor Map (Professional Plot + In-Plot Axis Titles)</div>', unsafe_allow_html=True)
 show_labels = st.checkbox("Show firm labels on chart", value=True)
 
-def choose_positions(df, xcol="Offering_Nature", ycol="Value_Proposition"):
-    positions, order = [], ["top center","top left","top right","bottom left","bottom right","middle left","middle right","bottom center"]
-    for i, r in df.iterrows():
-        pos = "top center"
-        for j in range(0, i):
-            dx = abs(r[xcol] - df.iloc[j][xcol]); dy = abs(r[ycol] - df.iloc[j][ycol])
-            if dx < 0.45 and dy < 0.45:
-                k = int((dx + dy) * 10) % len(order)
-                pos = order[k]; break
-        positions.append(pos)
-    return positions
-
+# --- Plot ---
 fig = px.scatter(
     edited,
     x="Offering_Nature", y="Value_Proposition",
@@ -183,72 +184,116 @@ fig = px.scatter(
     template="plotly_white",
 )
 
-# -------------------- ✅ MAKE AXIS TEXT WHITE --------------------
-fig.update_xaxes(
-    range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#fff", linewidth=1.2,
-    ticks="outside", ticklen=6, tickcolor="#fff",
-    tickmode="linear", tick0=1, dtick=1,
-    title_text="Nature of Offering (Functional → Holistic)",
-    title_font=dict(color="#fff", size=14, family="Arial Black"),
-    tickfont=dict(color="#fff", size=12),
-)
-fig.update_yaxes(
-    range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
-    zeroline=False, showline=True, linecolor="#fff", linewidth=1.2,
-    ticks="outside", ticklen=6, tickcolor="#fff",
-    tickmode="linear", tick0=1, dtick=1,
-    title_text="Value Proposition (Cost → Innovation)",
-    title_font=dict(color="#fff", size=14, family="Arial Black"),
-    tickfont=dict(color="#fff", size=12),
-)
-# ---------------------------------------------------------------
-
-fig.layout.plot_bgcolor = "#eefaFF"
+# White plot area, transparent paper around it
+fig.layout.plot_bgcolor = "#ffffff"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
+# Tidy axes (no default titles; we'll add inside as annotations)
+fig.update_xaxes(
+    title_text=None,
+    range=[0.5, 10.5],
+    showgrid=True, gridcolor="#e6e9ef",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.1,
+    ticks="outside", ticklen=6, tickcolor="#000",
+    tickmode="linear", tick0=1, dtick=1,
+    tickfont=dict(color="#000", size=12, family="Inter, Arial, sans-serif"),
+)
+fig.update_yaxes(
+    title_text=None,
+    range=[0.5, 10.5],
+    showgrid=True, gridcolor="#e6e9ef",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.1,
+    ticks="outside", ticklen=6, tickcolor="#000",
+    tickmode="linear", tick0=1, dtick=1,
+    tickfont=dict(color="#000", size=12, family="Inter, Arial, sans-serif"),
+)
+
+# Bubble label styling + outlines
 if show_labels:
-    fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
-fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
+    fig.update_traces(textposition="top center", textfont=dict(color="#111", size=12))
+fig.update_traces(marker=dict(line=dict(width=2, color="#111")), cliponaxis=False)
 
-fig.update_layout(margin=dict(l=70, r=70, t=40, b=90))
+# In-plot axis titles (dark) + professional margins
+fig.update_layout(
+    height=560,  # good vertical space for labels
+    margin=dict(l=70, r=140, t=50, b=65),  # enough room for ticks and colorbar
+    font=dict(family="Inter, Arial, sans-serif"),
+    coloraxis_colorbar=dict(
+        title=dict(text="SME_Focus", font=dict(color="#111", size=12)),
+        tickfont=dict(color="#111", size=11),
+        x=1.01, xanchor="left", y=0.5, yanchor="middle",
+        len=0.9, thickness=12,
+        bgcolor="rgba(255,255,255,0.75)",
+        outlinecolor="#d1d5db", outlinewidth=1
+    ),
+    annotations=[
+        # X-axis title inside (bottom center of plotting area)
+        dict(
+            text="Nature of Offering (Functional → Holistic)",
+            x=0.5, y=0.015, xref="paper", yref="paper",
+            showarrow=False,
+            font=dict(size=14, color="#111", family="Arial Black"),
+            xanchor="center", yanchor="bottom"
+        ),
+        # Y-axis title inside (left middle of plotting area)
+        dict(
+            text="Value Proposition (Cost → Innovation)",
+            x=0.015, y=0.5, xref="paper", yref="paper",
+            showarrow=False,
+            font=dict(size=14, color="#111", family="Arial Black"),
+            xanchor="left", yanchor="middle",
+            textangle=-90
+        ),
+    ],
+)
 
+# Full-width responsive container
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(
+    fig, use_container_width=True,
+    config={"displaylogo": False,
+            "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":560,"width":1200}}
+)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== 5) WHITE-SPACE + STRATEGY ====================
-edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
-edited["WS_Interpretation"] = edited["White_Space_Score"].apply(ws_interpretation)
-
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">5) White-Space Analysis & Strategy Recommendations</div>', unsafe_allow_html=True)
 
+edited["White_Space_Score"] = (edited["Offering_Nature"] + edited["Value_Proposition"]) / 2 - (10 - edited["SME_Focus"]) * 0.1
+edited["WS_Interpretation"] = edited["White_Space_Score"].apply(ws_interpretation)
+
 rows = len(edited)
 tbl_height = min(720, 120 + 38 * rows)
+st.markdown("**White-Space Scores (higher = more opportunity)**")
 st.dataframe(
     edited[["Firm","Offering_Nature","Value_Proposition","SME_Focus","AI_Explanation","White_Space_Score","WS_Interpretation"]]
         .sort_values("White_Space_Score", ascending=False),
     use_container_width=True, height=tbl_height
 )
 
-sme_mean = edited["SME_Focus"].mean()
-diffs = []
-if (edited["Value_Proposition"] > edited["Value_Proposition"].mean()).sum() >= len(edited)//2:
-    diffs.append("Outcome-linked pricing for SMEs.")
-else:
-    diffs.append("AI-enabled SME Strategy Studio.")
-if (edited["Offering_Nature"] < edited["Offering_Nature"].mean()).sum() >= len(edited)//3:
-    diffs.append("Holistic transformation bundles for Tier-2 SMEs.")
-else:
-    diffs.append("Industry-specific KPI playbooks.")
+# Simple strategy hints
+x_mean = float(edited["Offering_Nature"].mean())
+y_mean = float(edited["Value_Proposition"].mean())
+sme_mean = float(edited["SME_Focus"].mean())
 
+diffs = []
+if (edited["Value_Proposition"] > y_mean).sum() >= len(edited)//2 and (edited["SME_Focus"] < sme_mean).sum() >= len(edited)//3:
+    diffs.append("Outcome-linked pricing for SMEs (fees tied to realized improvements).")
+else:
+    diffs.append("AI-enabled SME Strategy Studio (diagnostics + simulation).")
+if (edited["Offering_Nature"] < x_mean).sum() >= len(edited)//3:
+    diffs.append("Holistic transformation bundles for Tier-2/Tier-3 SMEs (strategy + process + analytics).")
+else:
+    diffs.append("Sector playbooks with KPI blueprints for rapid rollout.")
+
+st.markdown("**Strategy Recommendations**")
 st.success("\n".join([f"• {d}" for d in diffs]))
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== 6) EXPORT ====================
-csv_data = edited.to_csv(index=False).encode("utf-8")
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">6) Export for Annexure</div>', unsafe_allow_html=True)
+csv_data = edited.to_csv(index=False).encode("utf-8")
 st.download_button("⬇️ Download Current Data (CSV)", data=csv_data, file_name="firms_clean.csv", mime="text/csv")
 st.markdown('</div>', unsafe_allow_html=True)
