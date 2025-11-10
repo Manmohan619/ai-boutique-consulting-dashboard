@@ -139,7 +139,7 @@ st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
 with st.container():  # keeps widget layout stable; avoids orphan artifacts
-    # stable uid for keys (prevents "white ribbon" ghost widget)
+    # stable uid for keys (prevents ghost widgets)
     if "uid" not in st.session_state.df.columns:
         st.session_state.df["uid"] = [
             f'{i}_{str(r["Firm"]).strip().lower().replace(" ", "_") or "blank"}'
@@ -187,25 +187,29 @@ fig = px.scatter(
 fig.layout.plot_bgcolor = "#ffffff"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# --- FORCE visible ticks and numbers (1..10) ---
+# --- FORCE visible numbering & ticks INSIDE the plot ---
 tick_vals = list(range(1, 11))
 fig.update_xaxes(
     title_text=None,
     range=[0.5, 10.5],
     tickmode="array", tickvals=tick_vals,
-    showticklabels=True, ticks="outside", ticklen=6, tickcolor="#000",
+    showticklabels=True,
+    ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12, family="Inter, Arial"),
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#111", linewidth=1.2
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
+    mirror=True
 )
 fig.update_yaxes(
     title_text=None,
     range=[0.5, 10.5],
     tickmode="array", tickvals=tick_vals,
-    showticklabels=True, ticks="outside", ticklen=6, tickcolor="#000",
+    showticklabels=True,
+    ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12, family="Inter, Arial"),
     showgrid=True, gridcolor="#e6e9ef",
-    zeroline=False, showline=True, linecolor="#111", linewidth=1.2
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.2,
+    mirror=True
 )
 
 # --- Bubble styling ---
@@ -245,7 +249,7 @@ fig.update_layout(
     ],
 )
 
-# --- Render full-width; disable Streamlit theming so our colors win ---
+# --- Render full-width; disable Streamlit theme recoloring ---
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig,
