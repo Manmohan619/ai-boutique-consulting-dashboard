@@ -310,7 +310,7 @@ if (edited["Offering_Nature"] < x_mean).sum() >= len(edited)//3:
 else:
     diffs.append("Sector playbooks with KPI blueprints for rapid rollout.")
 
-st.markdown("**Strategy Recommendations**")
+st.markdown("**Suggested two differentiators to pursue (Strategy Recommendation)**")
 st.success("\n".join([f"• {d}" for d in diffs]))
 st.markdown('</div>', unsafe_allow_html=True)
 
