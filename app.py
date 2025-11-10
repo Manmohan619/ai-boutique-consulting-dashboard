@@ -46,12 +46,11 @@ st.markdown("""
 /* ---- Chart wrapper for rounded border ---- */
 .plot-card{
   border:1.75px solid #000; border-radius:12px; overflow:hidden;
-  /* keep wrapper background neutral; inner plot carries light-blue */
-  background: #0b1220; /* visible only on host dark themes behind margins */
+  background: transparent;
   padding:0; margin:0;
 }
 
-/* Fallback darkening for colorbar text if Plotly version ignores font settings */
+/* Fallback darkening for colorbar text if Plotly ignores font settings */
 .plot-card .colorbar text,
 .plot-card .colorbar-title{ fill:#000000 !important; }
 </style>
@@ -119,7 +118,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">2) Manage Firms</div>', unsafe_allow_html=True)
 
-# Add firm (always visible, no expanders)
+# Add firm
 c1, c2, c3, c4, c5 = st.columns([0.32, 0.18, 0.18, 0.18, 0.14])
 new_name = c1.text_input("Firm name", placeholder="Enter firm name")
 new_on   = c2.slider("Offering_Nature", 1, 10, 6, key="add_on")
@@ -208,38 +207,48 @@ fig = px.scatter(
 fig.layout.plot_bgcolor = "#eefaFF"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
-# Axes/ticks dark for readability
-fig.update_xaxes(range=[0.5,10.5], showgrid=True, gridcolor="#d0d4da",
-                 zeroline=False, linecolor="#000", linewidth=1.2,
-                 title_font=dict(color="#000"), tickfont=dict(color="#000"))
-fig.update_yaxes(range=[0.5,10.5], showgrid=True, gridcolor="#d0d4da",
-                 zeroline=False, linecolor="#000", linewidth=1.2,
-                 title_font=dict(color="#000"), tickfont=dict(color="#000"))
+# Axes: force visible ticks & labels
+fig.update_xaxes(
+    range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.4, mirror=True,
+    showticklabels=True, ticks='outside', ticklen=6, tickcolor="#000",
+    tickmode='linear', tick0=1, dtick=1,
+    title_text="Nature of Offering (Functional → Holistic)",
+    title_font=dict(color="#000", size=14), tickfont=dict(color="#000", size=12)
+)
+fig.update_yaxes(
+    range=[0.5,10.5], showgrid=True, gridcolor="#cfd4da",
+    zeroline=False, showline=True, linecolor="#000", linewidth=1.4, mirror=True,
+    showticklabels=True, ticks='outside', ticklen=6, tickcolor="#000",
+    tickmode='linear', tick0=1, dtick=1,
+    title_text="Value Proposition (Cost → Innovation)",
+    title_font=dict(color="#000", size=14), tickfont=dict(color="#000", size=12)
+)
 
 # Labels dark + bubble outline
 if show_labels:
     fig.update_traces(textposition=choose_positions(edited), textfont=dict(color="#000", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#000")), cliponaxis=False)
 
-# Put the colorbar INSIDE the plot (right edge), with dark title/ticks
+# Colorbar INSIDE the plot with dark text (and a subtle readable backdrop)
 try:
     fig.update_layout(
         coloraxis_colorbar=dict(
-            title=dict(text="SME Focus", font=dict(color="#000")),
-            tickfont=dict(color="#000"),
-            x=0.985, xanchor="right", y=0.5, yanchor="middle",  # inside the plotting area
+            title=dict(text="SME Focus", font=dict(color="#000", size=12)),
+            tickfont=dict(color="#000", size=11),
+            x=0.985, xanchor="right", y=0.5, yanchor="middle",
             len=0.9, thickness=12,
-            bgcolor="rgba(255,255,255,0.55)",  # subtle readable backdrop
+            bgcolor="rgba(255,255,255,0.55)",
             outlinecolor="#000", outlinewidth=1
         )
     )
 except Exception:
     pass
 
-# Tight margins; wrapper provides rounded border
-fig.update_layout(margin=dict(l=20, r=20, t=30, b=20))
+# Slightly wider margins to guarantee tick labels show
+fig.update_layout(margin=dict(l=40, r=40, t=35, b=50))
 
-# Wrap in a div so our rounded border applies and is visible
+# Render inside rounded border card
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig, use_container_width=True,
