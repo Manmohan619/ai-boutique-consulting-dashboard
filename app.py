@@ -114,7 +114,7 @@ st.markdown("<div class='small-note'>Use the sliders below to update each firm's
 for i in range(len(st.session_state.df)):
     row = st.session_state.df.loc[i]
     with st.expander(f"✏️ Edit: {row['Firm'] if row['Firm'] else f'Firm {i+1}'}", expanded=False):
-        name = st.text_input("Firm", value=row["Firm"], key=f"name_{i}")
+        name = st.text_input("Firm", value=str(row["Firm"]), key=f"name_{i}")
         c1, c2, c3 = st.columns(3)
         with c1:
             on = st.slider("Offering_Nature", 1, 10, int(row["Offering_Nature"]), key=f"on_{i}")
@@ -155,12 +155,14 @@ fig.update_traces(
     textfont=dict(color="#111", size=12),
     marker=dict(line=dict(width=1.8, color="#111"))
 )
+# Keep layout minimal & compatible with Plotly versions on Streamlit Cloud
 fig.update_layout(
     height=640,
     font=dict(color="#111", size=13),
-    xaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#b7b7b7", zeroline=False, linecolor="#111", linewidth=1.2, mirror=True),
-    yaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#b7b7b7", zeroline=False, linecolor="#111", linewidth=1.2, mirror=True),
-    coloraxis_colorbar=dict(title="SME Focus", tickcolor="#111", titlefont=dict(color="#111"), tickfont=dict(color="#111")),
+    xaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#b7b7b7",
+               zeroline=False, linecolor="#111", linewidth=1.2, mirror=True),
+    yaxis=dict(range=[0.5, 10.5], showgrid=True, gridcolor="#b7b7b7",
+               zeroline=False, linecolor="#111", linewidth=1.2, mirror=True),
     margin=dict(l=10, r=10, t=30, b=10)
 )
 st.plotly_chart(fig, use_container_width=True)
