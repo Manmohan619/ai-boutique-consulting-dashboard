@@ -138,8 +138,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="h3">3) Edit Scores (Sliders)</div><div class="subtle">Adjust below; changes apply instantly.</div>', unsafe_allow_html=True)
 
-with st.container():  # keeps widget layout stable; avoids orphan artifacts
-    # stable uid for keys (prevents ghost/orphan widgets)
+with st.container():
     if "uid" not in st.session_state.df.columns:
         st.session_state.df["uid"] = [
             f'{i}_{str(r["Firm"]).strip().lower().replace(" ", "_") or "blank"}'
@@ -178,53 +177,55 @@ fig = px.scatter(
     x="Offering_Nature", y="Value_Proposition",
     size="SME_Focus", color="SME_Focus",
     text="Firm" if show_labels else None,
-    color_continuous_scale=px.colors.sequential.Viridis,  # ← SME part unchanged
+    color_continuous_scale=px.colors.sequential.Viridis,  # SME part unchanged
     hover_data=["AI_Explanation"],
     template="plotly_white",
 )
 
-# White plot background; transparent page
+# White plot area; transparent paper
 fig.layout.plot_bgcolor = "#ffffff"
 fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
 
 tick_vals = list(range(1, 11))
 
-# X-axis: titles OUTSIDE in white, ticks & numbers black
+# X-axis: title OUTSIDE (white), ticks & numbers INSIDE (black)
 fig.update_xaxes(
     title="Nature of Offering (Functional → Holistic)",
     title_font=dict(color="white", size=14, family="Arial Black"),
     title_standoff=22,
     tickmode="array", tickvals=tick_vals,
-    showticklabels=True,
-    ticks="outside", ticklen=6, tickcolor="#000",
+    ticklabelposition="inside",              # numbers inside plot
+    ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12),
+    showticklabels=True,
     showgrid=True, gridcolor="#e6e9ef",
     zeroline=False,
     showline=True, linecolor="#000", linewidth=1.2, mirror=True,
     range=[0.5, 10.5]
 )
 
-# Y-axis: titles OUTSIDE in white, ticks & numbers black
+# Y-axis: title OUTSIDE (white), ticks & numbers INSIDE (black)
 fig.update_yaxes(
     title="Value Proposition (Cost → Innovation)",
     title_font=dict(color="white", size=14, family="Arial Black"),
     title_standoff=22,
     tickmode="array", tickvals=tick_vals,
-    showticklabels=True,
-    ticks="outside", ticklen=6, tickcolor="#000",
+    ticklabelposition="inside",              # numbers inside plot
+    ticks="inside", ticklen=6, tickcolor="#000",
     tickfont=dict(color="#000", size=12),
+    showticklabels=True,
     showgrid=True, gridcolor="#e6e9ef",
     zeroline=False,
     showline=True, linecolor="#000", linewidth=1.2, mirror=True,
     range=[0.5, 10.5]
 )
 
-# Bubble styling
+# Bubbles & labels
 if show_labels:
     fig.update_traces(textposition="top center", textfont=dict(color="#111", size=12))
 fig.update_traces(marker=dict(line=dict(width=2, color="#111")), cliponaxis=False)
 
-# Layout: keep room for outside titles; SME colorbar unchanged
+# Layout: space for outside titles
 fig.update_layout(
     height=560,
     margin=dict(l=110, r=140, t=50, b=110),
@@ -239,12 +240,12 @@ fig.update_layout(
     ),
 )
 
-# Render
+# Render full-width; prevent Streamlit theme from recoloring
 st.markdown('<div class="plot-card">', unsafe_allow_html=True)
 st.plotly_chart(
     fig,
     use_container_width=True,
-    theme=None,  # prevent Streamlit theme from recoloring ticks
+    theme=None,
     config={"displaylogo": False,
             "toImageButtonOptions": {"format":"png","filename":"competitor_map","height":560,"width":1200}}
 )
